@@ -1,0 +1,398 @@
+﻿<!-- ====== MÓDULO: Factura global (dentro de <main class="scroll">) ====== -->
+<section id="factura-global" class="fg">
+
+	 <style>
+		 /* ==== Scope: solo aplica dentro de #factura-global ==== */
+		 #factura-global {
+			--fg-toolbar-h: 3.25rem;
+		 }
+
+		 /* Línea de carga (usa el #top-loader que ya tienes en <main>) */
+		 #top-loader {
+			position: sticky;
+			top: 0;
+			left: 0;
+			height: 3px;
+			width: 0%;
+			background: linear-gradient(90deg,#0d6efd,#20c997,#ffc107,#0d6efd);
+			background-size: 300% 100%;
+			z-index: 5;
+			transition: width .25s ease;
+			animation: fg-hue 3s linear infinite;
+		 }
+
+		 @keyframes fg-hue {
+			0% {
+				background-position: 0 0
+			}
+
+			100% {
+				background-position: 300% 0
+			}
+		 }
+
+		 #factura-global .toolbar {
+			position: sticky;
+			top: 0;
+			z-index: 4;
+			background: #fff;
+			border-bottom: 1px solid #e9ecef;
+		 }
+
+		 #factura-global .table thead th.sticky {
+			position: sticky;
+			background: #fff;
+			z-index: 3;
+		 }
+
+		 #factura-global .cursor-pointer {
+			cursor: pointer;
+		 }
+
+		 #shell > main {
+			padding-inline: 4rem;
+		 }
+	 </style>
+
+	 <!-- Toolbar / filtros -->
+	 <header class="toolbar">
+			<div class="container-fluid py-3">
+				 <div class="d-flex flex-wrap gap-2 align-items-end">
+						<div class="me-auto">
+							 <h1 class="h5 mb-0">Factura global — selección de tickets</h1>
+							 <small class="text-muted">Filtra, selecciona y factura los tickets no facturados</small>
+						</div>
+						<div class="text-end">
+							 <div class="fw-semibold">Seleccionados: <span id="fg-sel-count">0</span></div>
+							 <small class="text-muted">Máx. recomendado por factura: 1,000</small>
+						</div>
+						<div>
+							 <button id="fg-btn-clear" class="btn btn-outline-secondary btn-sm" disabled>Borrar selección</button>
+							 <button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled>Facturar selección</button>
+						</div>
+				 </div>
+
+				 <div class="row g-2 mt-2">
+						<div class="col-12 col-md-3">
+							 <label class="form-label mb-1">Rango de fechas</label>
+							 <div class="d-flex gap-2">
+									<input id="fg-f-start" type="date" class="form-control form-control-sm" placeholder="mm/dd/yyyy">
+									<input id="fg-f-end" type="date" class="form-control form-control-sm" placeholder="mm/dd/yyyy">
+							 </div>
+						</div>
+						<div class="col-12 col-md-3">
+							 <label class="form-label mb-1">Buscar (folio, sucursal)</label>
+							 <input id="fg-f-text" type="search" class="form-control form-control-sm" placeholder="Ej. TCK-00123 o Sucursal Centro">
+						</div>
+						<div class="col-6 col-md-2">
+							 <label class="form-label mb-1">Monto mín</label>
+							 <input id="fg-f-min" type="number" step="0.01" class="form-control form-control-sm" value="0.00">
+						</div>
+						<div class="col-6 col-md-2">
+							 <label class="form-label mb-1">Monto máx</label>
+							 <input id="fg-f-max" type="number" step="0.01" class="form-control form-control-sm" value="9999.99">
+						</div>
+						<div class="col-12 col-md-2 d-flex align-items-end gap-2">
+							 <button id="fg-btn-apply" class="btn btn-outline-primary btn-sm w-100">Aplicar filtros</button>
+							 <button id="fg-btn-reset" class="btn btn-outline-secondary btn-sm">Limpiar</button>
+						</div>
+				 </div>
+			</div>
+	 </header>
+
+	 <!-- Resumen + tabla + paginación -->
+	 <div class="container-fluid my-4">
+			<div class="row g-3 align-items-center mb-2">
+				 <div class="col">
+						<div class="card">
+							 <div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
+									<div><strong>Subtotal:</strong> <span id="fg-sum-subtotal">$0.00</span></div>
+									<div><strong>IVA (16%):</strong> <span id="fg-sum-iva">$0.00</span></div>
+									<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
+									<div class="ms-auto d-flex gap-2">
+										 <button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
+										 <button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
+									</div>
+							 </div>
+						</div>
+				 </div>
+			</div>
+
+			<div class="d-flex justify-content-between align-items-center mt-3">
+				 <small class="text-muted" id="fg-page-info">Página 1</small>
+				 <div class="btn-group">
+						<button id="fg-btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
+						<button id="fg-btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
+				 </div>
+			</div>
+
+			<div class="table-responsive">
+				 <table class="table table-hover align-middle mb-0" id="fg-tbl">
+						<thead>
+							 <tr>
+									<th class="sticky" style="width:42px;">
+										 <input id="fg-chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles">
+									</th>
+									<th class="sticky">Fecha</th>
+									<th class="sticky">Folio</th>
+									<th class="sticky">Sucursal</th>
+									<th class="sticky text-end">Subtotal</th>
+									<th class="sticky text-end">IVA</th>
+									<th class="sticky text-end">Total</th>
+									<th class="sticky">Estado</th>
+							 </tr>
+						</thead>
+						<tbody id="fg-tbody"></tbody>
+				 </table>
+			</div>
+
+			<!-- Parámetros CFDI -->
+			<div class="card mt-4">
+				 <div class="card-body">
+						<h2 class="h6 mb-3">Parámetros de la factura global</h2>
+						<div class="row g-3">
+							 <div class="col-12 col-md-3">
+									<label class="form-label">RFC Receptor</label>
+									<input id="fg-cfdi-rfc" class="form-control" value="XAXX010101000">
+									<div class="form-text">Público en general: XAXX010101000</div>
+							 </div>
+							 <div class="col-12 col-md-3">
+									<label class="form-label">Uso CFDI</label>
+									<select id="fg-cfdi-uso" class="form-select">
+										 <option value="S01" selected>S01 - Sin efectos fiscales</option>
+										 <option value="G01">G01 - Adquisición de mercancías</option>
+										 <option value="G03">G03 - Gastos en general</option>
+									</select>
+							 </div>
+							 <div class="col-6 col-md-3">
+									<label class="form-label">Método de pago</label>
+									<select id="fg-cfdi-metodo" class="form-select">
+										 <option value="PUE" selected>PUE - Pago en una sola exhibición</option>
+										 <option value="PPD">PPD - Pago en parcialidades o diferido</option>
+									</select>
+							 </div>
+							 <div class="col-6 col-md-3">
+									<label class="form-label">Forma de pago</label>
+									<select id="fg-cfdi-forma" class="form-select">
+										 <option value="01">01 - Efectivo</option>
+										 <option value="03">03 - Transferencia</option>
+										 <option value="04">04 - Tarjeta de crédito</option>
+										 <option value="28" selected>28 - Tarjeta de débito</option>
+									</select>
+							 </div>
+						</div>
+						<div class="form-text mt-2">* Ajusta según tu timbrado y reglas internas.</div>
+				 </div>
+			</div>
+	 </div>
+
+	 <!-- Modal confirmar -->
+	 <div class="modal fade" id="fg-confirm" tabindex="-1" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				 <div class="modal-content">
+						<div class="modal-header">
+							 <h5 class="modal-title">Confirmar factura global</h5>
+							 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+						</div>
+						<div class="modal-body">
+							 <p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
+							 <p class="text-muted small mb-0">¿Deseas continuar?</p>
+						</div>
+						<div class="modal-footer">
+							 <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+							 <button id="fg-m-confirm" class="btn btn-primary">Sí, facturar</button>
+						</div>
+				 </div>
+			</div>
+	 </div>
+
+	 <script>
+		 // ==== Lógica scopeada al módulo ====
+		 (function () {
+				const PAGE_SIZE = 10;
+				let all = [], filtered = [], pageIndex = 0, selected = new Set();
+
+				function showLoader(on) {
+					 const el = document.getElementById('top-loader');
+					 if (!el) return;
+					 el.style.width = on ? '80%' : '100%';
+					 if (!on) setTimeout(() => { el.style.width = '0%'; }, 300);
+				}
+				const $ = (id) => document.getElementById(id);
+
+				// DEMO: genera tickets; reemplazar por fetch a tu API.
+				function seed() {
+					 const today = new Date();
+					 for (let i = 1; i <= 40; i++) {
+							const d = new Date(today); d.setDate(today.getDate() - i);
+							const subtotal = +(50 + Math.random() * 450).toFixed(2);
+							const iva = +(subtotal * 0.16).toFixed(2);
+							const total = +(subtotal + iva).toFixed(2);
+							all.push({
+								 id: i, fecha: d.toISOString().slice(0, 10), folio: `TCK-${String(1000 + i).padStart(5, '0')}`,
+								 sucursal: ['Centro', 'Norte', 'Sur'][i % 3],
+								 subtotal, iva, total, estado: Math.random() < 0.7 ? 'No facturado' : 'Facturado'
+							});
+					 }
+				}
+
+				async function seed() {
+					 let model = await xo.stores["#facturas"].ready;
+					 for (let row of model.select(`model/row`)) {
+							const i = row.getAttribute("id");
+							const d = new Date(row.getAttribute("dt"));
+							const subtotal = +(row.getAttribute("st") || 0);
+							const iva = +(subtotal * 0.16).toFixed(2);
+							const total = +(subtotal + iva).toFixed(2);
+							all.push({
+								 id: i, fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
+								 sucursal: row.getAttribute("suc"),
+								 subtotal, iva, total, estado: Math.random() < 0.7 ? 'No facturado' : 'Facturado'
+							});
+					 }
+				}
+
+				function money(n) { return n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); }
+
+				function applyFilters() {
+					 const fstart = $('fg-f-start').value;
+					 const fend = $('fg-f-end').value;
+					 const ftext = $('fg-f-text').value.trim().toLowerCase();
+					 const fmin = parseFloat($('fg-f-min').value);
+					 const fmax = parseFloat($('fg-f-max').value);
+
+					 filtered = all.filter(t => {
+							if (t.estado !== 'No facturado') return false;
+							if (fstart && t.fecha < fstart) return false;
+							if (fend && t.fecha > fend) return false;
+							if (!isNaN(fmin) && t.total < fmin) return false;
+							if (!isNaN(fmax) && t.total > fmax) return false;
+							if (ftext) {
+								 const hay = (t.folio + ' ' + t.sucursal).toLowerCase();
+								 if (!hay.includes(ftext)) return false;
+							}
+							return true;
+					 });
+					 pageIndex = 0;
+					 render();
+				}
+
+				function pageItems() {
+					 const s = pageIndex * PAGE_SIZE;
+					 return filtered.slice(s, s + PAGE_SIZE);
+				}
+
+				function render() {
+					 const tbody = $('fg-tbody');
+					 tbody.innerHTML = '';
+					 const rows = pageItems();
+					 for (const t of rows) {
+							const tr = document.createElement('tr');
+							tr.innerHTML = `
+								 <td><input class="form-check-input fg-row" type="checkbox" data-id="${t.id}" ${selected.has(t.id) ? 'checked' : ''}></td>
+								 <td>${t.fecha}</td>
+								 <td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
+								 <td>${t.sucursal}</td>
+								 <td class="text-end">${money(t.subtotal)}</td>
+								 <td class="text-end">${money(t.iva)}</td>
+								 <td class="text-end">${money(t.total)}</td>
+								 <td><span class="badge text-bg-warning">No facturado</span></td>`;
+							tbody.appendChild(tr);
+					 }
+					 $('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
+					 const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+					 $('fg-page-info').textContent = `Página ${pageIndex + 1} de ${totalPages} — ${filtered.length} tickets`;
+					 $('fg-btn-prev').disabled = pageIndex === 0;
+					 $('fg-btn-next').disabled = pageIndex >= totalPages - 1;
+					 updateSummary(); updateButtons();
+				}
+
+				function updateSummary() {
+					 let subtotal = 0, iva = 0, total = 0;
+					 for (const id of selected) {
+							const t = all.find(x => x.id === id); if (!t) continue;
+							subtotal += t.subtotal; iva += t.iva; total += t.total;
+					 }
+					 $('fg-sum-subtotal').textContent = money(subtotal);
+					 $('fg-sum-iva').textContent = money(iva);
+					 $('fg-sum-total').textContent = money(total);
+					 $('fg-sel-count').textContent = selected.size;
+					 $('fg-m-count').textContent = selected.size;
+					 $('fg-m-total').textContent = money(total);
+				}
+
+				function updateButtons() {
+					 const has = selected.size > 0;
+					 $('fg-btn-clear').disabled = !has;
+					 $('fg-btn-invoice').disabled = !has;
+				}
+
+				function bind() {
+					 $('fg-btn-apply').addEventListener('click', () => { showLoader(true); setTimeout(() => { applyFilters(); showLoader(false); }, 150); });
+					 $('fg-btn-reset').addEventListener('click', () => {
+							['fg-f-start', 'fg-f-end', 'fg-f-text', 'fg-f-min', 'fg-f-max'].forEach(id => $(id).value = '');
+							applyFilters();
+					 });
+					 $('fg-btn-prev').addEventListener('click', () => { if (pageIndex > 0) { pageIndex--; render(); } });
+					 $('fg-btn-next').addEventListener('click', () => {
+							const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+							if (pageIndex < totalPages - 1) { pageIndex++; render(); }
+					 });
+					 $('fg-btn-select-visible').addEventListener('click', () => { for (const r of pageItems()) selected.add(r.id); render(); });
+					 $('fg-btn-unselect-visible').addEventListener('click', () => { for (const r of pageItems()) selected.delete(r.id); render(); });
+					 $('fg-chk-all').addEventListener('change', (e) => {
+							if (e.target.checked) { for (const r of pageItems()) selected.add(r.id); }
+							else { for (const r of pageItems()) selected.delete(r.id); }
+							render();
+					 });
+					 $('fg-tbody').addEventListener('change', (e) => {
+							if (!e.target.classList.contains('fg-row')) return;
+							const id = +e.target.dataset.id;
+							e.target.checked ? selected.add(id) : selected.delete(id);
+							updateSummary(); updateButtons();
+							const rows = pageItems();
+							$('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
+					 });
+					 $('fg-btn-clear').addEventListener('click', () => { selected.clear(); render(); });
+					 $('fg-btn-invoice').addEventListener('click', () => { new bootstrap.Modal('#fg-confirm').show(); });
+					 $('fg-m-confirm').addEventListener('click', async () => {
+							const payload = {
+								 ticketIds: Array.from(selected),
+								 cfdi: {
+										rfc: $('fg-cfdi-rfc').value.trim(),
+										uso: $('fg-cfdi-uso').value,
+										metodo: $('fg-cfdi-metodo').value,
+										forma: $('fg-cfdi-forma').value
+								 }
+							};
+							showLoader(true);
+							try {
+								 // TODO: POST real a /api/facturar-global
+								 await new Promise(r => setTimeout(r, 800)); // simular
+								 bootstrap.Modal.getInstance(document.querySelector('#fg-confirm')).hide();
+								 for (const id of payload.ticketIds) { const t = all.find(x => x.id === id); if (t) t.estado = 'Facturado'; }
+								 selected.clear(); applyFilters();
+								 alert('Factura global generada (simulado). Integra UUID y marcado en BD.');
+							} catch (err) {
+								 console.error(err); alert('Error al facturar. Revisa el endpoint.');
+							} finally { showLoader(false); }
+					 });
+				}
+
+				// bootstrap del módulo
+				(async function init() {
+					 showLoader(true);
+					 await seed(); applyFilters(); bind();
+					 // fija la altura de la toolbar para el sticky del thead
+					 document.querySelector('#factura-global .toolbar').addEventListener('resize', () => {
+							const h = document.querySelector('#factura-global .toolbar').offsetHeight;
+							document.querySelector('#factura-global').style.setProperty('--fg-toolbar-h', h + 'px');
+					 });
+					 // valor inicial:
+					 const h0 = document.querySelector('#factura-global .toolbar').offsetHeight;
+					 document.querySelector('#factura-global').style.setProperty('--fg-toolbar-h', h0 + 'px');
+					 showLoader(false);
+				})();
+		 })();
+	 </script>
+</section>

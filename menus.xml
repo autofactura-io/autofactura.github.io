@@ -1,0 +1,8 @@
+﻿<?xml-stylesheet type="text/xsl" href="menus.xslt" target="@#shell @#menu"?>
+<menus>
+	<settings/>
+	<!--<notifications>
+	</notifications>
+	<messages>
+	</messages>-->
+</menus>

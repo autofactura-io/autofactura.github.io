@@ -1,0 +1,83 @@
+table > tbody > tr > td {
+    padding: 0 10px;
+}
+
+thead.freeze, tr.freeze {
+    position: sticky;
+    z-index: 910;
+    top: 0;
+}
+
+table > thead.freeze > tr > td, table > thead.freeze > tr > th, table tr.freeze > td, table tr.freeze > th {
+    position: sticky;
+    z-index: 910;
+    top: 0;
+}
+
+table > thead.freeze > tr:nth-child(1) > td, table > thead.freeze > tr:nth-child(1) > th {
+    top: 0px;
+}
+
+table > thead.freeze > tr:last-child > td, table > thead.freeze > tr:last-child > th {
+    box-shadow: inset 0 -2px 0 gray;
+}
+
+table td.freeze, table th.freeze {
+    position: sticky;
+    left: 0;
+    box-shadow: inset -2px 0 0 gray;
+}
+
+table col.freeze {
+    background-color:white
+}
+
+table thead.freeze td.freeze, table thead.freeze th.freeze {
+    z-index: 911;
+}
+
+table thead.freeze td.freeze img, table thead.freeze th.freeze img {
+    z-index: 912;
+}
+
+table.datagrid thead th:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+table.datagrid thead th label {
+    width: 100%;
+    text-align: center;
+}
+
+table.datagrid tbody td {
+    text-align: center;
+}
+
+th.rotate, td.rotate {
+    /* Something you can count on */
+    height: 140px;
+    white-space: nowrap;
+    text-align: center;
+    text-transform: capitalize;
+    vertical-align: bottom;
+    padding-block-end: 2rem !important;
+    padding-inline-end: 1rem !important;
+}
+
+th.rotate > *, td.rotate > * {
+    transform:
+    /* Magic Numbers */
+    translate(50%,50%)
+    /* 45 is really 360 - 45 */
+    rotate(-90deg);
+    width: 30px;
+}
+
+th.rotate > * > span, td.rotate > * > span {
+    border-bottom: 1px solid #ccc;
+    padding: 5px 10px;
+}

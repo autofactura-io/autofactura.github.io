@@ -1,0 +1,79 @@
+{
+	 "server": {
+			"request": "${xover.session.server}/request.asp",
+			"login": "POST ${xover.session.server}/login.asp",
+			"logout": "${xover.session.server}/logout.asp",
+			"applyPermissions": {
+				 "POST server:request": { "FROM": "[$Security].[applyPermissions]" }
+			}
+	 },
+	 "session": {
+			"gist": "https://gist.githubusercontent.com/uriel-online/17685de3e6ff832b0cc499c82949d336/raw/panax-server"
+	 },
+	 "sources": {
+			"^#([^?]+)(\\?.*)?": {
+				 "server:request": {
+						"FROM": "PanaxBI.$1"
+				 }
+			},
+			"#": "#shell",
+			"#shell": null,
+			"#login": null,
+			"#loading": null,
+			"#settings": "settings.xml",
+			"px-daterange": "widgets/daterange.xhtml",
+			"px-combobox": "widgets/combobox.xhtml",
+			"px-printer": "widgets/printer.xhtml",
+			"px-loader": "widgets/loader.xhtml",
+			"google-chart": "widgets/google-chart.xhtml",
+			"#menu": "menus.xml",
+			"#globalization": [ "assets/globalization/headerText.${xo.session.locale.split('-').shift()}.resx", "assets/globalization/headerText.resx" ],
+			"#sitemap": "sitemap.xml",
+			"#factura_global": "factura_global_scoped.html",
+			"#facturas": {
+				 "server:request": {
+						"FROM": "lnd.ticketsXFacturar"
+				 }
+			}
+	 },
+	 "start": [
+			"loading.xslt",
+			"px-combobox",
+			"px-daterange",
+			"px-printer",
+			"px-to-excel",
+			"px-loader",
+			"#facturas",
+			{ "updateTunnel": [] }
+	 ],
+	 "settings": {
+			"^#.*": {
+				 "headers": {
+						"Cache-Control": "max-age=0",
+						"x-debugging": "true",
+						"expiry": 1
+				 }
+			},
+			"#factura_global": { "target": "@#shell main" },
+			"#facturas": {
+				 "headers": {
+						"x-root-node": "model",
+						"x-row-node": "row",
+						"x-xml-mode": "PATH"
+				 }
+			},
+			"~.asp": {
+				 "headers": {
+						"authorization": "${xover.session.id_token}"
+				 }
+			},
+			"server:applyPermissions": {
+				 "headers": {
+						"x-payload-parameter-name": "@input"
+				 }
+			},
+			"#shell": {
+				 "hash": ""
+			}
+	 }
+}
