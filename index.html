@@ -1,31 +1,53 @@
 ﻿<!DOCTYPE html>
 <html lang="es-MX">
 <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=10" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="debug" content="true">
-    <link rel="manifest" href="pwa-manifest.json">
-    <link rel="xover-manifest" href="manifest.json">
-    <link rel="xover-manifest" href="tests/.manifest">
-    <link rel="xover-manifest" href="server/.manifest">
-    <link rel="xover-manifest" href=".manifest">
-    <link rel="stylesheet" href="styles/shell.css?v=251110_0845" />
-    <link rel="stylesheet" href="styles/tables.css?v=251110_0845" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="library/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="library/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/f2d133d40b.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script language="JavaScript" src="xover/xo.js?v=251110_0845"></script>
-    <script language="JavaScript" src="custom.js?v=251110_0845"></script>
-    <script language="JavaScript" src="panaxbi.js?v=250616_2026"></script>
-    <script language="JavaScript" src="socket.io.js?v=251110_0845"></script>
-    <script language="JavaScript" src="register-pwa.js?v=250616_2026" defer=defer></script>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon" />
-    <title>Autofactura</title>
+   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+   <meta http-equiv="X-UA-Compatible" content="IE=10" />
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="debug" content="true">
+   <meta name="google-signin-client_id" content="343742298482-3lr3vaec4gef5p57cve4p85un4mg50a9.apps.googleusercontent.com" />
+   <link rel="manifest" href="pwa-manifest.json">
+   <link rel="xover-manifest" href="manifest.json">
+   <link rel="xover-manifest" href="tests/.manifest">
+   <link rel="xover-manifest" href="server/.manifest">
+   <link rel="xover-manifest" href=".manifest">
+   <link rel="stylesheet" href="styles/shell.css?v=251202_1022" />
+   <link rel="stylesheet" href="styles/tables.css?v=251202_1022" />
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="library/bootstrap-5.3.3-dist/css/bootstrap.min.css" rel="stylesheet">
+   <script src="library/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+   <script src="https://kit.fontawesome.com/f2d133d40b.js" crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+   <script language="JavaScript" src="xover/xo.js?v=251202_1022"></script>
+   <script language="JavaScript" src="custom.js?v=251202_1022"></script>
+   <script language="JavaScript" src="panaxbi.js?v=250616_2026"></script>
+   <script language="JavaScript" src="socket.io.js?v=251202_1022"></script>
+   <script language="JavaScript" src="register-pwa.js?v=250616_2026" defer=defer></script>
+   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+   <link rel="shortcut icon" href="assets/favicon.png" type="image/x-icon" />
+   <title>Autofactura</title>
 </head>
-<body></body>
+<body>
+   <div class="modal fade" id="fg-confirm" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h5 class="modal-title">Confirmar factura global</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+               <p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
+               <p class="text-muted small mb-0">¿Deseas continuar?</p>
+            </div>
+            <div class="modal-footer">
+               <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+               <button id="fg-m-confirm" class="btn btn-primary">Sí, facturar</button>
+            </div>
+         </div>
+      </div>
+   </div>
+</body>
 </html>

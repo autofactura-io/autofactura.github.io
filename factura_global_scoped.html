@@ -1,4 +1,23 @@
-﻿<!-- ====== MÓDULO: Factura global (dentro de <main class="scroll">) ====== -->
+﻿<!-- Modal confirmar -->
+<!--<div class="modal fade" id="fg-confirm" tabindex="-1" aria-hidden="true">
+	 <div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				 <div class="modal-header">
+						<h5 class="modal-title">Confirmar factura global</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+				 </div>
+				 <div class="modal-body">
+						<p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
+						<p class="text-muted small mb-0">¿Deseas continuar?</p>
+				 </div>
+				 <div class="modal-footer">
+						<button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+						<button id="fg-m-confirm" class="btn btn-primary">Sí, facturar</button>
+				 </div>
+			</div>
+	 </div>
+</div>-->
+<!-- ====== MÓDULO: Factura global (dentro de <main class="scroll">) ====== -->
 <section id="factura-global" class="fg">
 
 	 <style>
@@ -7,7 +26,6 @@
 			--fg-toolbar-h: 3.25rem;
 		 }
 
-		 /* Línea de carga (usa el #top-loader que ya tienes en <main>) */
 		 #top-loader {
 			position: sticky;
 			top: 0;
@@ -54,7 +72,33 @@
 		 }
 	 </style>
 
-	 <!-- Toolbar / filtros -->
+	 <div id="calendarModal"
+			 style="display:none; position:fixed; inset:0; background:#0005; z-index:999;">
+
+			<div style="background:white; width:320px; margin:80px auto; padding:20px; border-radius:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+
+				 <label id="calendar" style="flex-basis:100%; display:block; margin-bottom:6px;">
+						Filtrar por rango:
+				 </label>
+
+				 <input id="rangePicker" placeholder="Selecciona el rango" style="flex:1;" />
+
+				 <button type="button"
+						 id="btnCalendarClear"
+						 title="Borrar selección"
+						 style="border:none; background:transparent; font-size:16px; cursor:pointer;">
+						🧹
+				 </button>
+
+				 <button type="button"
+						 id="btnCalendarClose"
+						 title="Cerrar"
+						 style="border:none; background:transparent; font-size:18px; cursor:pointer;">
+						✖
+				 </button>
+			</div>
+	 </div>
+	 <div id="top-loader"></div>
 	 <header class="toolbar">
 			<div class="container-fluid py-3">
 				 <div class="d-flex flex-wrap gap-2 align-items-end">
@@ -74,10 +118,10 @@
 
 				 <div class="row g-2 mt-2">
 						<div class="col-12 col-md-3">
-							 <label class="form-label mb-1">Rango de fechas</label>
+							 <label class="form-label mb-1">Búsqueda por fecha</label>
 							 <div class="d-flex gap-2">
-									<input id="fg-f-start" type="date" class="form-control form-control-sm" placeholder="mm/dd/yyyy">
-									<input id="fg-f-end" type="date" class="form-control form-control-sm" placeholder="mm/dd/yyyy">
+									<input id="fg-f-start" value="" type="date" data-open-calendar class="form-control form-control-sm" placeholder="mm/dd/yyyy">
+									<input id="fg-f-end" value="" type="date" data-open-calendar class="form-control form-control-sm" placeholder="mm/dd/yyyy">
 							 </div>
 						</div>
 						<div class="col-12 col-md-3">
@@ -110,8 +154,8 @@
 									<div><strong>IVA (16%):</strong> <span id="fg-sum-iva">$0.00</span></div>
 									<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
 									<div class="ms-auto d-flex gap-2">
-										 <button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
 										 <button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
+										 <button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
 									</div>
 							 </div>
 						</div>
@@ -186,31 +230,14 @@
 			</div>
 	 </div>
 
-	 <!-- Modal confirmar -->
-	 <div class="modal fade" id="fg-confirm" tabindex="-1" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				 <div class="modal-content">
-						<div class="modal-header">
-							 <h5 class="modal-title">Confirmar factura global</h5>
-							 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-						</div>
-						<div class="modal-body">
-							 <p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
-							 <p class="text-muted small mb-0">¿Deseas continuar?</p>
-						</div>
-						<div class="modal-footer">
-							 <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-							 <button id="fg-m-confirm" class="btn btn-primary">Sí, facturar</button>
-						</div>
-				 </div>
-			</div>
-	 </div>
-
 	 <script>
-		 // ==== Lógica scopeada al módulo ====
+		 //const autofactura = {};
 		 (function () {
 				const PAGE_SIZE = 10;
-				let all = [], filtered = [], pageIndex = 0, selected = new Set();
+
+				autofactura.allTickets = [], autofactura.filtered = [], autofactura.pageIndex = 0, autofactura.selected = new Set();
+
+				let allTickets = autofactura.allTickets, filtered = autofactura.filtered, pageIndex = autofactura.pageIndex, selected = autofactura.selected;
 
 				function showLoader(on) {
 					 const el = document.getElementById('top-loader');
@@ -220,34 +247,18 @@
 				}
 				const $ = (id) => document.getElementById(id);
 
-				// DEMO: genera tickets; reemplazar por fetch a tu API.
-				function seed() {
-					 const today = new Date();
-					 for (let i = 1; i <= 40; i++) {
-							const d = new Date(today); d.setDate(today.getDate() - i);
-							const subtotal = +(50 + Math.random() * 450).toFixed(2);
-							const iva = +(subtotal * 0.16).toFixed(2);
-							const total = +(subtotal + iva).toFixed(2);
-							all.push({
-								 id: i, fecha: d.toISOString().slice(0, 10), folio: `TCK-${String(1000 + i).padStart(5, '0')}`,
-								 sucursal: ['Centro', 'Norte', 'Sur'][i % 3],
-								 subtotal, iva, total, estado: Math.random() < 0.7 ? 'No facturado' : 'Facturado'
-							});
-					 }
-				}
-
 				async function seed() {
 					 let model = await xo.stores["#facturas"].ready;
 					 for (let row of model.select(`model/row`)) {
 							const i = row.getAttribute("id");
-							const d = new Date(row.getAttribute("dt"));
+							const d = row.getAttribute("dt").parseDate();
 							const subtotal = +(row.getAttribute("st") || 0);
 							const iva = +(subtotal * 0.16).toFixed(2);
 							const total = +(subtotal + iva).toFixed(2);
-							all.push({
+							allTickets.push({
 								 id: i, fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
 								 sucursal: row.getAttribute("suc"),
-								 subtotal, iva, total, estado: Math.random() < 0.7 ? 'No facturado' : 'Facturado'
+								 subtotal, iva, total, estado: 'No facturado'//Math.random() < 0.7 ? 'No facturado' : 'Facturado'
 							});
 					 }
 				}
@@ -255,13 +266,13 @@
 				function money(n) { return n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); }
 
 				function applyFilters() {
+					 showLoader(true)
 					 const fstart = $('fg-f-start').value;
 					 const fend = $('fg-f-end').value;
 					 const ftext = $('fg-f-text').value.trim().toLowerCase();
 					 const fmin = parseFloat($('fg-f-min').value);
 					 const fmax = parseFloat($('fg-f-max').value);
-
-					 filtered = all.filter(t => {
+					 filtered = allTickets.filter(t => {
 							if (t.estado !== 'No facturado') return false;
 							if (fstart && t.fecha < fstart) return false;
 							if (fend && t.fecha > fend) return false;
@@ -275,6 +286,7 @@
 					 });
 					 pageIndex = 0;
 					 render();
+					 showLoader(false)
 				}
 
 				function pageItems() {
@@ -289,14 +301,14 @@
 					 for (const t of rows) {
 							const tr = document.createElement('tr');
 							tr.innerHTML = `
-								 <td><input class="form-check-input fg-row" type="checkbox" data-id="${t.id}" ${selected.has(t.id) ? 'checked' : ''}></td>
-								 <td>${t.fecha}</td>
-								 <td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
-								 <td>${t.sucursal}</td>
-								 <td class="text-end">${money(t.subtotal)}</td>
-								 <td class="text-end">${money(t.iva)}</td>
-								 <td class="text-end">${money(t.total)}</td>
-								 <td><span class="badge text-bg-warning">No facturado</span></td>`;
+															<td><input class="form-check-input fg-row" type="checkbox" data-id="${t.id}" ${selected.has(t.id) ? 'checked' : ''}></td>
+															<td>${t.fecha}</td>
+															<td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
+															<td>${t.sucursal}</td>
+															<td class="text-end">${money(t.subtotal)}</td>
+															<td class="text-end">${money(t.iva)}</td>
+															<td class="text-end">${money(t.total)}</td>
+															<td><span class="badge text-bg-warning">No facturado</span></td>`;
 							tbody.appendChild(tr);
 					 }
 					 $('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
@@ -310,7 +322,7 @@
 				function updateSummary() {
 					 let subtotal = 0, iva = 0, total = 0;
 					 for (const id of selected) {
-							const t = all.find(x => x.id === id); if (!t) continue;
+							const t = allTickets.find(x => x.id == id); if (!t) continue;
 							subtotal += t.subtotal; iva += t.iva; total += t.total;
 					 }
 					 $('fg-sum-subtotal').textContent = money(subtotal);
@@ -328,6 +340,9 @@
 				}
 
 				function bind() {
+					 for (let element of document.querySelectorAll('#factura-global header input')) {
+							element.addEventListener('change', () => applyFilters())
+					 }
 					 $('fg-btn-apply').addEventListener('click', () => { showLoader(true); setTimeout(() => { applyFilters(); showLoader(false); }, 150); });
 					 $('fg-btn-reset').addEventListener('click', () => {
 							['fg-f-start', 'fg-f-end', 'fg-f-text', 'fg-f-min', 'fg-f-max'].forEach(id => $(id).value = '');
@@ -347,34 +362,50 @@
 					 });
 					 $('fg-tbody').addEventListener('change', (e) => {
 							if (!e.target.classList.contains('fg-row')) return;
-							const id = +e.target.dataset.id;
+							const id = e.target.dataset.id;
 							e.target.checked ? selected.add(id) : selected.delete(id);
 							updateSummary(); updateButtons();
 							const rows = pageItems();
 							$('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
 					 });
 					 $('fg-btn-clear').addEventListener('click', () => { selected.clear(); render(); });
-					 $('fg-btn-invoice').addEventListener('click', () => { new bootstrap.Modal('#fg-confirm').show(); });
+					 $('fg-btn-invoice').addEventListener('click', () => {
+							new bootstrap.Modal('#fg-confirm').show();
+					 });
 					 $('fg-m-confirm').addEventListener('click', async () => {
-							const payload = {
-								 ticketIds: Array.from(selected),
-								 cfdi: {
-										rfc: $('fg-cfdi-rfc').value.trim(),
+							//const payload = new File([JSON.stringify({
+							//	 ticketIds: Array.from(selected),
+							//	 cfdi: {
+							//			rfc: $('fg-cfdi-rfc').value.trim(),
+							//			uso: $('fg-cfdi-uso').value,
+							//			metodo: $('fg-cfdi-metodo').value,
+							//			forma: $('fg-cfdi-forma').value
+							//	 }
+							//})], "@xml", { type: "text/plain" });
+							const payload = xover.xml.createDocument(`<tickets>${[...selected].map(item => `<row id="${item}"/>`).join("")}</tickets>`);
+							for (let [attr, value] of Object.entries({
+										receptor: $('fg-cfdi-rfc').value.trim(),
 										uso: $('fg-cfdi-uso').value,
 										metodo: $('fg-cfdi-metodo').value,
 										forma: $('fg-cfdi-forma').value
-								 }
-							};
+							 })) {
+							 payload.documentElement.setAttribute(attr, value)
+							}
 							showLoader(true);
 							try {
-								 // TODO: POST real a /api/facturar-global
-								 await new Promise(r => setTimeout(r, 800)); // simular
 								 bootstrap.Modal.getInstance(document.querySelector('#fg-confirm')).hide();
-								 for (const id of payload.ticketIds) { const t = all.find(x => x.id === id); if (t) t.estado = 'Facturado'; }
+								 let result = await xover.server.facturar(new File([payload], "@xml", { type: "text/xml" }));
+								 let codigo = result.documentElement.getAttribute('token');
+								 for (const row of result.select(`tickets/row`)) {
+										const id = row.getAttribute("id");
+										const t = allTickets.find(x => x.id == id); if (t) t.estado = 'Facturado';
+								 }
 								 selected.clear(); applyFilters();
-								 alert('Factura global generada (simulado). Integra UUID y marcado en BD.');
+								 alert(`Puede continuar en el archivo de contpaq con el siguiente código: ${codigo}`);
 							} catch (err) {
-								 console.error(err); alert('Error al facturar. Revisa el endpoint.');
+								 let message = err.document.single(`//xo:message`) || "Error al facturar. Revisa el endpoint.";
+								 console.error(err);
+								 alert(message.textContent || message);
 							} finally { showLoader(false); }
 					 });
 				}
@@ -394,5 +425,44 @@
 					 showLoader(false);
 				})();
 		 })();
+		 document.addEventListener('click', async function (event) {
+				const input = event.target.closest('input[type="date"][data-open-calendar]');
+				if (!input) return;
+				event.preventDefault();
+				input.dispatch("openCalendar");
+		 })
+
+		 xo.listener.on(`openCalendar`, async function ({ event }) {
+				if ((event.srcEvent || event).ctrlKey && this.ownerElement) {
+					 this.remove();
+					 return;
+				}
+				let element = this.closest("*");
+				let container = element.closest("div");
+				let [start_date, end_date] = container.querySelectorAll("[type=date]").toArray();
+				function applyFilters(filters) {
+					 if (!filters) filters = null;
+					 let [from, to] = filters.split("~");
+					 start_date.value = from;
+					 end_date.value = to;
+					 element.dispatchEvent(new Event('input', { bubbles: true }));
+					 element.dispatchEvent(new Event('change', { bubbles: true }));
+
+				}
+				let prompt_text = `Filtrar por ${element.getAttribute("headerText") || element.getAttribute("Name") || "fecha"}`;
+				let modal = top.document.querySelector(`#calendarModal`);
+				let data_type = element.getAttribute("DataType") || element.getAttribute("Type");
+				let filters;
+				if (typeof (openCalendar) == 'function' && modal && ["datetime", "date"].includes(data_type)) {
+					 let maxDate = 'today'
+					 let defaultDate = [start_date.value, end_date.nodeType === Node.ELEMENT_NODE && end_date !== element ? end_date.value : ""];
+					 const { from, to } = await openCalendar({ label: prompt_text, defaultDate, maxDate });
+					 filters = from && to ? `${from}~${to}` : null;
+				} else {
+					 filters = prompt(prompt_text);
+				}
+				if (filters == null || this.value == filters) return false;
+				applyFilters.call(this, filters);
+		 })
 	 </script>
 </section>

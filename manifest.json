@@ -3,12 +3,12 @@
 			"request": "${xover.session.server}/request.asp",
 			"login": "POST ${xover.session.server}/login.asp",
 			"logout": "${xover.session.server}/logout.asp",
-			"applyPermissions": {
-				 "POST server:request": { "FROM": "[$Security].[applyPermissions]" }
+			"facturar": {
+				 "POST server:request": { "FROM": "autofactura.actualizarTicketsXFacturar" }
 			}
 	 },
 	 "session": {
-			"gist": "https://gist.githubusercontent.com/uriel-online/17685de3e6ff832b0cc499c82949d336/raw/panax-server"
+			"gist": "https://gist.githubusercontent.com/uriel-online/800af4cecfa9471b81712394e5aff147/raw/panax-server"
 	 },
 	 "sources": {
 			"^#([^?]+)(\\?.*)?": {
@@ -32,7 +32,7 @@
 			"#factura_global": "factura_global_scoped.html",
 			"#facturas": {
 				 "server:request": {
-						"FROM": "lnd.ticketsXFacturar"
+						"FROM": "autofactura.tickets"
 				 }
 			}
 	 },
@@ -67,9 +67,9 @@
 						"authorization": "${xover.session.id_token}"
 				 }
 			},
-			"server:applyPermissions": {
+			"server:facturar": {
 				 "headers": {
-						"x-payload-parameter-name": "@input"
+						"x-payload-parameter-name": "@xml"
 				 }
 			},
 			"#shell": {
