@@ -8,7 +8,7 @@
 			}
 	 },
 	 "session": {
-			"gist": "https://server.autofactura.io"
+			"server": "https://server.autofactura.io"
 	 },
 	 "sources": {
 			"^#([^?]+)(\\?.*)?": {
