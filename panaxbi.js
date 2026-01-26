@@ -153,7 +153,7 @@ function createToast({ header, body }) {
 
 xover.listener.on('NetworkError', function ({ url }) {
     createToast({
-        header: "Error de red"
+        header: "Error de conexión"
         , body: `No se pudo acceder al servidor ${url.host}`
     })
 })

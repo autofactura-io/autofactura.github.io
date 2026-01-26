@@ -1,0 +1,59 @@
+﻿<!doctype html>
+<meta charset="utf-8" />
+<title>Pirámide Autofactura — giro con pausa</title>
+<style>
+   :root {
+      --blue: #0A4C8A; /* franja */
+      --light: #EEF2F5; /* cara superior clara */
+      --base: #CBD3DA; /* base */
+      --dur: 6s; /* duración total del ciclo */
+   }
+
+   body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #fff
+   }
+</style>
+<body>
+
+<!-- IMPORTANTE: SVG inline, no <img> -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 260" width="320" height="380"
+     aria-label="Pirámide animada Autofactura">
+   <defs>
+      <clipPath id="clipFace">
+         <polygon points="110,20 30,220 190,220" />
+      </clipPath>
+   </defs>
+
+   <!-- Grupo que rota y hace pausas en 0°, 120°, 240° -->
+   <g id="spin" transform="rotate(0 110 170)">
+      <!-- Cara (triángulo) -->
+      <polygon fill="var(--light)" points="110,20 30,220 190,220" />
+      <!-- Base -->
+      <rect x="25" y="150" width="170" height="80" fill="var(--base)" clip-path="url(#clipFace)" />
+
+      <!-- Franja azul que MORPH entre plana y en "V".
+           OJO: ambos estados tienen exactamente el mismo número de comandos y puntos -->
+      <path id="band" fill="var(--blue)" clip-path="url(#clipFace)"
+            d="M30,138 L190,138 L190,160 L110,160 L30,160 L30,138 Z">
+         <animate attributeName="d" dur="var(--dur)" repeatCount="indefinite"
+                  values="
+          M30,138 L190,138 L190,160 L110,160 L30,160 L30,138 Z;
+          M30,138 L190,138 L190,160 L110,174 L30,160 L30,138 Z;
+          M30,138 L190,138 L190,160 L110,160 L30,160 L30,138 Z;
+          M30,138 L190,138 L190,160 L110,174 L30,160 L30,138 Z;
+          M30,138 L190,138 L190,160 L110,160 L30,160 L30,138 Z"
+                  keyTimes="0;0.165;0.33;0.66;1" calcMode="linear" />
+      </path>
+
+      <!-- Rotación con pausas en cada cara -->
+      <animateTransform attributeName="transform" type="rotate"
+                        dur="var(--dur)" repeatCount="indefinite"
+                        values="0 110 170; 0 110 170; 120 110 170; 120 110 170; 240 110 170; 240 110 170; 360 110 170"
+                        keyTimes="0;0.12;0.33;0.45;0.66;0.78;1" calcMode="linear" />
+   </g>
+</svg>
+</body>

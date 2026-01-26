@@ -1,0 +1,49 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 260" role="img" aria-label="Pirámide autofactura animada">
+	 <style>
+			:root{
+			--blue: #0A4C8A;   /* franja */
+			--light:#EEF2F5;   /* parte superior clara */
+			--base: #CBD3DA;   /* base más sombreada */
+			--shadow: rgba(0,0,0,.12);
+			--dur: 6s;         /* duración total del ciclo (0°→120°→240°→360°) */
+			--pause: ease;     /* puedes usar steps(1) si prefieres saltos secos */
+			}
+			/* para respetar accesibilidad */
+			@media (prefers-reduced-motion: reduce){
+			#spin { animation: none !important }
+			}
+	 </style>
+
+	 <!-- Centro de giro (cx,cy) ajustado a la geometría -->
+	 <g id="spin" transform="rotate(0 110 160)">
+			<!-- Cara (triángulo isósceles) -->
+			<defs>
+				 <clipPath id="clipFace">
+						<polygon points="110,10 25,220 195,220"/>
+				 </clipPath>
+			</defs>
+
+			<!-- Superficie de la cara en dos zonas (superior y base) -->
+			<polygon fill="var(--light)" points="110,10 25,220 195,220" />
+			<!-- Base (mitad inferior), recortada al triángulo -->
+			<rect x="20" y="140" width="180" height="90" fill="var(--base)" clip-path="url(#clipFace)"/>
+
+			<!-- Franja azul centrada (queda plana; al girar simula la V según perspectiva global) -->
+			<rect x="20" y="120" width="180" height="22" fill="var(--blue)" clip-path="url(#clipFace)"/>
+
+			<!-- Arista vertical sutil para volumen (opcional) -->
+			<line x1="110" y1="10" x2="110" y2="220" stroke="var(--shadow)" stroke-width="2" />
+
+			<!-- Animación: gira y PAUSA en cada cara -->
+			<animateTransform
+				attributeName="transform" type="rotate"
+				dur="var(--dur)" repeatCount="indefinite"
+				values="
+        0 110 160;   0 110 160;
+        120 110 160; 120 110 160;
+        240 110 160; 240 110 160;
+        360 110 160"
+				keyTimes="0;0.18;0.33;0.51;0.66;0.84;1"
+				calcMode="linear"/>
+	 </g>
+</svg>

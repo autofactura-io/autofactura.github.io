@@ -8,7 +8,7 @@
 			}
 	 },
 	 "session": {
-			"gist": "https://gist.githubusercontent.com/uriel-online/800af4cecfa9471b81712394e5aff147/raw/panax-server"
+			"gist": "https://server.autofactura.io"
 	 },
 	 "sources": {
 			"^#([^?]+)(\\?.*)?": {
@@ -32,12 +32,24 @@
 			"#factura_global": "factura_global_scoped.html",
 			"#facturas": {
 				 "server:request": {
-						"FROM": "autofactura.tickets"
+						"FROM": "autofactura.tickets",
+						"^X-ORDER-BY": "[@tkt]"
 				 }
+			},
+			"#ws": {
+				 "xover.socket.connect": [
+						"ws://localhost:8003",
+						{
+							 "message": "#messages",
+							 "hotreload": "event:hotreload",
+							 "databaseChange": "event:databaseChange"
+						}
+				 ]
 			}
 	 },
 	 "start": [
 			"loading.xslt",
+			"#ws",
 			"px-combobox",
 			"px-daterange",
 			"px-printer",
@@ -45,6 +57,7 @@
 			"px-loader",
 			"#facturas",
 			{ "updateTunnel": [] }
+
 	 ],
 	 "settings": {
 			"^#.*": {

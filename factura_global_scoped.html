@@ -151,7 +151,7 @@
 						<div class="card">
 							 <div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
 									<div><strong>Subtotal:</strong> <span id="fg-sum-subtotal">$0.00</span></div>
-									<div><strong>IVA (16%):</strong> <span id="fg-sum-iva">$0.00</span></div>
+									<div><strong>IVA (<span id="fg-tasa">16</span>%):</strong> <span id="fg-sum-iva">$0.00</span></div>
 									<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
 									<div class="ms-auto d-flex gap-2">
 										 <button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
@@ -253,7 +253,8 @@
 							const i = row.getAttribute("id");
 							const d = row.getAttribute("dt").parseDate();
 							const subtotal = +(row.getAttribute("st") || 0);
-							const iva = +(subtotal * 0.16).toFixed(2);
+							const tasa = (row.getAttributeNode("tasa") || $('fg-tasa')).value / 100;
+							const iva = +(subtotal * tasa).toFixed(2);
 							const total = +(subtotal + iva).toFixed(2);
 							allTickets.push({
 								 id: i, fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
@@ -387,7 +388,11 @@
 										receptor: $('fg-cfdi-rfc').value.trim(),
 										uso: $('fg-cfdi-uso').value,
 										metodo: $('fg-cfdi-metodo').value,
-										forma: $('fg-cfdi-forma').value
+										forma: $('fg-cfdi-forma').value,
+										subtotal: $('fg-sum-subtotal').value,
+										tasa: $('fg-tasa').value,
+										iva: $('fg-sum-iva').value,
+										total: $('fg-sum-total').value
 							 })) {
 							 payload.documentElement.setAttribute(attr, value)
 							}
@@ -395,7 +400,8 @@
 							try {
 								 bootstrap.Modal.getInstance(document.querySelector('#fg-confirm')).hide();
 								 let result = await xover.server.facturar(new File([payload], "@xml", { type: "text/xml" }));
-								 let codigo = result.documentElement.getAttribute('token');
+								 let codigo = result.documentElement?.getAttribute('token');
+								 if (!codigo) throw(new Error(`No se pudo completar la operación. Intente nuevamente en unos minutos.`))
 								 for (const row of result.select(`tickets/row`)) {
 										const id = row.getAttribute("id");
 										const t = allTickets.find(x => x.id == id); if (t) t.estado = 'Facturado';
@@ -403,7 +409,8 @@
 								 selected.clear(); applyFilters();
 								 alert(`Puede continuar en el archivo de contpaq con el siguiente código: ${codigo}`);
 							} catch (err) {
-								 let message = err.document.single(`//xo:message`) || "Error al facturar. Revisa el endpoint.";
+								 if (instanceOf.call(err, Error)) return Promise.reject(err);
+								 let message = instanceOf.call(err.document, Node) && err.document.single(`//xo:message`) || "Error al facturar. Revisa el endpoint.";
 								 console.error(err);
 								 alert(message.textContent || message);
 							} finally { showLoader(false); }
