@@ -72,7 +72,8 @@
 				 "headers": {
 						"x-root-node": "model",
 						"x-row-node": "row",
-						"x-xml-mode": "PATH"
+						"x-xml-mode": "PATH",
+						"x-page-size": "10000"
 				 }
 			},
 			"~.asp": {

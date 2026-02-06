@@ -1,0 +1,408 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Seleccionar tickets para Factura Global</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    /* Barra de progreso delgada tipo “loading line” */
+    #top-loader {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+      background: linear-gradient(90deg, #0d6efd, #20c997, #ffc107, #0d6efd);
+      background-size: 300% 100%; z-index: 2000; transition: width .25s ease;
+      animation: hue 3s linear infinite;
+    }
+    @keyframes hue { 0%{background-position:0 0} 100%{background-position:300% 0} }
+
+    .table thead th.sticky {
+      position: sticky; top: 3.25rem; background: #fff; z-index: 1;
+    }
+    .toolbar {
+      position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 1px solid #e9ecef;
+    }
+    .cursor-pointer { cursor: pointer; }
+  </style>
+</head>
+<body class="bg-light">
+
+<div id="top-loader"></div>
+
+<header class="toolbar">
+  <div class="container py-3">
+    <div class="d-flex flex-wrap gap-2 align-items-end">
+      <div class="me-auto">
+        <h1 class="h5 mb-0">Factura global — selección de tickets</h1>
+        <small class="text-muted">Filtra, selecciona y factura los tickets no facturados</small>
+      </div>
+      <div class="text-end">
+        <div class="fw-semibold">Seleccionados: <span id="sel-count">0</span></div>
+        <small class="text-muted">Máx. recomendado por factura: 1,000</small>
+      </div>
+      <div>
+        <button id="btn-clear" class="btn btn-outline-secondary btn-sm" disabled>Borrar selección</button>
+        <button id="btn-invoice" class="btn btn-primary btn-sm" disabled>Facturar selección</button>
+      </div>
+    </div>
+
+    <div class="row g-2 mt-2">
+      <div class="col-12 col-md-3">
+        <label class="form-label mb-1">Rango de fechas</label>
+        <div class="d-flex gap-2">
+          <input id="f-start" type="date" class="form-control form-control-sm">
+          <input id="f-end" type="date" class="form-control form-control-sm">
+        </div>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label mb-1">Buscar (folio, caja, sucursal)</label>
+        <input id="f-text" type="search" class="form-control form-control-sm" placeholder="Ej. TCK-00123 o Sucursal Centro">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Monto mín</label>
+        <input id="f-min" type="number" step="0.01" class="form-control form-control-sm" placeholder="0.00">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1">Monto máx</label>
+        <input id="f-max" type="number" step="0.01" class="form-control form-control-sm" placeholder="9999.99">
+      </div>
+      <div class="col-12 col-md-2 d-flex align-items-end gap-2">
+        <button id="btn-apply" class="btn btn-outline-primary btn-sm w-100">Aplicar filtros</button>
+        <button id="btn-reset" class="btn btn-outline-secondary btn-sm">Limpiar</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container my-4">
+  <!-- Resumen de totales -->
+  <div class="row g-3 align-items-center mb-2">
+    <div class="col">
+      <div class="card">
+        <div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
+          <div><strong>Subtotal:</strong> <span id="sum-subtotal">$0.00</span></div>
+          <div><strong>IVA (16%):</strong> <span id="sum-iva">$0.00</span></div>
+          <div><strong>Total:</strong> <span id="sum-total" class="fw-semibold">$0.00</span></div>
+          <div class="ms-auto d-flex gap-2">
+            <button id="btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
+            <button id="btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de tickets -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0" id="tbl-tickets">
+      <thead>
+        <tr>
+          <th class="sticky" style="width:42px;">
+            <input id="chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles">
+          </th>
+          <th class="sticky">Fecha</th>
+          <th class="sticky">Folio</th>
+          <th class="sticky">Sucursal</th>
+          <th class="sticky">Caja</th>
+          <th class="sticky text-end">Subtotal</th>
+          <th class="sticky text-end">IVA</th>
+          <th class="sticky text-end">Total</th>
+          <th class="sticky">Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Paginación simple -->
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <small class="text-muted" id="page-info">Página 1</small>
+    <div class="btn-group">
+      <button id="btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
+      <button id="btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
+    </div>
+  </div>
+
+  <!-- Panel CFDI (para factura global a Público en General) -->
+  <div class="card mt-4">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Parámetros de la factura global</h2>
+      <div class="row g-3">
+        <div class="col-12 col-md-3">
+          <label class="form-label">RFC Receptor</label>
+          <input id="cfdi-rfc" class="form-control" value="XAXX010101000">
+          <div class="form-text">Público en general: XAXX010101000</div>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label">Uso CFDI</label>
+          <select id="cfdi-uso" class="form-select">
+            <option value="S01" selected>S01 - Sin efectos fiscales</option>
+            <option value="G01">G01 - Adquisición de mercancías</option>
+            <option value="G03">G03 - Gastos en general</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Método de pago</label>
+          <select id="cfdi-metodo" class="form-select">
+            <option value="PUE" selected>PUE - Pago en una sola exhibición</option>
+            <option value="PPD">PPD - Pago en parcialidades o diferido</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label">Forma de pago</label>
+          <select id="cfdi-forma" class="form-select">
+            <option value="01">01 - Efectivo</option>
+            <option value="03">03 - Transferencia</option>
+            <option value="04">04 - Tarjeta de crédito</option>
+            <option value="28" selected>28 - Tarjeta de débito</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-text mt-2">* Ajusta estos valores según tu timbrado y reglas internas.</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar factura global</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">Se facturarán <strong id="m-count">0</strong> tickets por un total de <strong id="m-total">$0.00</strong>.</p>
+        <p class="text-muted small mb-0">¿Deseas continuar?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="m-confirm" class="btn btn-primary">Sí, facturar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ====== Datos de ejemplo / Integración ======
+ * Reemplaza la función fetchTickets() por una llamada a tu API/SQL.
+ * Estructura esperada:
+ * { id, fecha (YYYY-MM-DD), folio, sucursal, caja, subtotal, iva, total, estado: 'No facturado'|'Facturado' }
+*/
+const PAGE_SIZE = 10;
+let allTickets = [];
+let filtered = [];
+let pageIndex = 0;
+let selected = new Set();
+
+function simulateData(){
+  // 40 tickets demo, 70% no facturados
+  const today = new Date();
+  for (let i=1;i<=40;i++){
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const subtotal = (50 + Math.random()*450);
+    const iva = +(subtotal*0.16).toFixed(2);
+    const total = +(subtotal + iva).toFixed(2);
+    allTickets.push({
+      id: i,
+      fecha: d.toISOString().slice(0,10),
+      folio: `TCK-${String(1000+i).padStart(5,'0')}`,
+      sucursal: ['Centro','Norte','Sur'][i%3],
+      caja: `Caja ${1 + (i%4)}`,
+      subtotal: +subtotal.toFixed(2),
+      iva, total,
+      estado: Math.random() < 0.7 ? 'No facturado' : 'Facturado'
+    });
+  }
+}
+
+function showLoader(on){ 
+  const el = document.getElementById('top-loader');
+  el.style.width = on ? '80%' : '100%';
+  if(!on) setTimeout(()=>{ el.style.width='0%'; }, 300);
+}
+
+function money(n){ return n.toLocaleString('es-MX',{style:'currency',currency:'MXN'}); }
+
+function applyFilters(){
+  const fstart = document.getElementById('f-start').value;
+  const fend   = document.getElementById('f-end').value;
+  const ftext  = document.getElementById('f-text').value.trim().toLowerCase();
+  const fmin   = parseFloat(document.getElementById('f-min').value);
+  const fmax   = parseFloat(document.getElementById('f-max').value);
+
+  filtered = allTickets.filter(t=>{
+    if (t.estado !== 'No facturado') return false; // Solo no facturados
+    if (fstart && t.fecha < fstart) return false;
+    if (fend && t.fecha > fend) return false;
+    if (!isNaN(fmin) && t.total < fmin) return false;
+    if (!isNaN(fmax) && t.total > fmax) return false;
+    if (ftext){
+      const hay = (t.folio + ' ' + t.sucursal + ' ' + t.caja).toLowerCase();
+      if (!hay.includes(ftext)) return false;
+    }
+    return true;
+  });
+  pageIndex = 0;
+  renderTable();
+}
+
+function currentPageItems(){
+  const start = pageIndex*PAGE_SIZE;
+  return filtered.slice(start, start+PAGE_SIZE);
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  const rows = currentPageItems();
+  for (const t of rows){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <input class="form-check-input row-check" type="checkbox" data-id="${t.id}" ${selected.has(t.id)?'checked':''}>
+      </td>
+      <td>${t.fecha}</td>
+      <td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
+      <td>${t.sucursal}</td>
+      <td>${t.caja}</td>
+      <td class="text-end">${money(t.subtotal)}</td>
+      <td class="text-end">${money(t.iva)}</td>
+      <td class="text-end">${money(t.total)}</td>
+      <td><span class="badge text-bg-warning">No facturado</span></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  // Header checkbox: marca si todos los visibles están seleccionados
+  const visiblesIds = new Set(rows.map(r=>r.id));
+  const allVisibleSelected = rows.length>0 && rows.every(r=>selected.has(r.id));
+  document.getElementById('chk-all').checked = allVisibleSelected;
+
+  // Página
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  document.getElementById('page-info').textContent = `Página ${pageIndex+1} de ${totalPages} — ${filtered.length} tickets`;
+  document.getElementById('btn-prev').disabled = pageIndex===0;
+  document.getElementById('btn-next').disabled = pageIndex>=totalPages-1;
+
+  updateSummary();
+  updateButtonsState();
+}
+
+function updateSummary(){
+  let subtotal = 0, iva = 0, total = 0;
+  for (const id of selected){
+    const t = allTickets.find(x=>x.id===id);
+    if(!t) continue;
+    subtotal += t.subtotal; iva += t.iva; total += t.total;
+  }
+  document.getElementById('sum-subtotal').textContent = money(subtotal);
+  document.getElementById('sum-iva').textContent = money(iva);
+  document.getElementById('sum-total').textContent = money(total);
+  document.getElementById('sel-count').textContent = selected.size;
+  document.getElementById('m-count').textContent = selected.size;
+  document.getElementById('m-total').textContent = money(total);
+}
+
+function updateButtonsState(){
+  const hasSel = selected.size>0;
+  document.getElementById('btn-clear').disabled = !hasSel;
+  document.getElementById('btn-invoice').disabled = !hasSel;
+}
+
+function initEvents(){
+  document.getElementById('btn-apply').addEventListener('click', ()=>{ showLoader(true); setTimeout(()=>{ applyFilters(); showLoader(false); }, 150); });
+  document.getElementById('btn-reset').addEventListener('click', ()=>{
+    for (const id of ['f-start','f-end','f-text','f-min','f-max']) document.getElementById(id).value='';
+    applyFilters();
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', ()=>{ if(pageIndex>0){ pageIndex--; renderTable(); }});
+  document.getElementById('btn-next').addEventListener('click', ()=>{
+    const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
+    if(pageIndex<totalPages-1){ pageIndex++; renderTable(); }
+  });
+
+  // Selección visible (botón y checkbox header)
+  document.getElementById('btn-select-visible').addEventListener('click', ()=>{ for(const r of currentPageItems()) selected.add(r.id); renderTable(); });
+  document.getElementById('btn-unselect-visible').addEventListener('click', ()=>{ for(const r of currentPageItems()) selected.delete(r.id); renderTable(); });
+  document.getElementById('chk-all').addEventListener('change', (e)=>{
+    if (e.target.checked){ for(const r of currentPageItems()) selected.add(r.id); }
+    else { for(const r of currentPageItems()) selected.delete(r.id); }
+    renderTable();
+  });
+
+  // Delegación de eventos para checks por fila
+  document.getElementById('tbody').addEventListener('change', (e)=>{
+    if (e.target.classList.contains('row-check')){
+      const id = +e.target.dataset.id;
+      if (e.target.checked) selected.add(id); else selected.delete(id);
+      updateSummary(); updateButtonsState();
+      // Sync header checkbox
+      const rows = currentPageItems();
+      const allVisibleSelected = rows.length>0 && rows.every(r=>selected.has(r.id));
+      document.getElementById('chk-all').checked = allVisibleSelected;
+    }
+  });
+
+  // Borrar selección total
+  document.getElementById('btn-clear').addEventListener('click', ()=>{ selected.clear(); renderTable(); });
+
+  // Facturar
+  document.getElementById('btn-invoice').addEventListener('click', ()=>{
+    const modal = new bootstrap.Modal('#confirmModal');
+    modal.show();
+  });
+
+  document.getElementById('m-confirm').addEventListener('click', async ()=>{
+    // TODO: Aquí llamar tu endpoint de timbrado/servidor.
+    // Ejemplo de payload:
+    const payload = {
+      ticketIds: Array.from(selected),
+      cfdi: {
+        rfc: document.getElementById('cfdi-rfc').value.trim(),
+        uso: document.getElementById('cfdi-uso').value,
+        metodo: document.getElementById('cfdi-metodo').value,
+        forma: document.getElementById('cfdi-forma').value
+      }
+    };
+    showLoader(true);
+    try{
+      // const res = await fetch('/api/facturar-global',{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      // const json = await res.json();
+      // TODO: manejar respuesta (UUID, PDF/XML, etc.)
+      // Simulación:
+      await new Promise(r=>setTimeout(r,800));
+      bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+      // Marcar como “Facturado” localmente:
+      for(const id of payload.ticketIds){
+        const t = allTickets.find(x=>x.id===id);
+        if(t) t.estado='Facturado';
+      }
+      selected.clear();
+      applyFilters();
+      alert('Factura global generada (simulado). Integra aquí el folio fiscal, descarga de PDF/XML y marcado en BD.');
+    }catch(err){
+      console.error(err);
+      alert('Error al facturar. Revisa la consola y tu endpoint.');
+    }finally{
+      showLoader(false);
+    }
+  });
+}
+
+/* ====== Bootstrap ====== */
+(function bootstrapPage(){
+  showLoader(true);
+  simulateData();
+  applyFilters();
+  initEvents();
+  showLoader(false);
+})();
+</script>
+</body>
+</html>

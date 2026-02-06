@@ -39,8 +39,45 @@
                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-               <p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
-               <p class="text-muted small mb-0">¿Deseas continuar?</p>
+              <div class="card">
+                <div class="card-body">
+              <p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
+                  <h2 class="h6 mb-3">Parámetros de la factura</h2>
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">RFC Receptor</label>
+                      <input id="fg-cfdi-rfc" class="form-control" value="XAXX010101">
+                      <div class="form-text">Público en general: XAXX010101</div>
+                    </div>
+                    <!--<div class="col-12">
+                      <label class="form-label">Uso CFDI</label>
+                      <select id="fg-cfdi-uso" class="form-select">
+                        <option value="S01" selected>S01 - Sin efectos fiscales</option>
+                        <option value="G01">G01 - Adquisición de mercancías</option>
+                        <option value="G03">G03 - Gastos en general</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Método de pago</label>
+                      <select id="fg-cfdi-metodo" class="form-select">
+                        <option value="PUE" selected>PUE - Pago en una sola exhibición</option>
+                        <option value="PPD">PPD - Pago en parcialidades o diferido</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Forma de pago</label>
+                      <select id="fg-cfdi-forma" class="form-select">
+                        <option value="01">01 - Efectivo</option>
+                        <option value="03">03 - Transferencia</option>
+                        <option value="04">04 - Tarjeta de crédito</option>
+                        <option value="28" selected>28 - Tarjeta de débito</option>
+                      </select>
+                    </div>-->
+                  </div>
+                  <div class="form-text mt-2">* Ajusta según tu timbrado y reglas internas.</div>
+                </div>
+              </div>
+              <!--<p class="text-muted small mb-0">¿Deseas continuar?</p>-->
             </div>
             <div class="modal-footer">
                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
