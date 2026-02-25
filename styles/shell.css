@@ -1756,7 +1756,7 @@ p {
     width: 100%;
     background-size: cover;
     background-attachment: fixed;
-    position: relative;
+    position: absolute;
 }
 
 aside {

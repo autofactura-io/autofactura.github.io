@@ -1,93 +1,96 @@
 {
-	 "server": {
-			"request": "${xover.session.server}/request.asp",
-			"login": "POST ${xover.session.server}/login.asp",
-			"logout": "${xover.session.server}/logout.asp",
-			"facturar": {
-				 "POST server:request": { "FROM": "autofactura.actualizarTicketsXFacturar" }
+	"site": {
+		"app": "Autofactura"
+	},
+	"server": {
+		"request": "${xover.session.server}/request.asp",
+		"login": "POST ${xover.session.server}/login.asp",
+		"logout": "${xover.session.server}/logout.asp",
+		"facturar": {
+			"POST server:request": { "FROM": "autofactura.actualizarTicketsXFacturar" }
+		}
+	},
+	"session": {
+		"server": "https://server.autofactura.io"
+	},
+	"sources": {
+		"^#([^?]+)(\\?.*)?": {
+			"server:request": {
+				"FROM": "PanaxBI.$1"
 			}
-	 },
-	 "session": {
-			"server": "https://server.autofactura.io"
-	 },
-	 "sources": {
-			"^#([^?]+)(\\?.*)?": {
-				 "server:request": {
-						"FROM": "PanaxBI.$1"
-				 }
-			},
-			"#": "#shell",
-			"#shell": null,
-			"#login": null,
-			"#loading": null,
-			"#settings": "settings.xml",
-			"px-daterange": "widgets/daterange.xhtml",
-			"px-combobox": "widgets/combobox.xhtml",
-			"px-printer": "widgets/printer.xhtml",
-			"px-loader": "widgets/loader.xhtml",
-			"google-chart": "widgets/google-chart.xhtml",
-			"#menu": "menus.xml",
-			"#globalization": [ "assets/globalization/headerText.${xo.session.locale.split('-').shift()}.resx", "assets/globalization/headerText.resx" ],
-			"#sitemap": "sitemap.xml",
-			"#factura_global": "factura_global_scoped.html",
-			"#facturas": {
-				 "server:request": {
-						"FROM": "autofactura.tickets",
-						"^X-ORDER-BY": "[@tkt]"
-				 }
-			},
-			"#ws": {
-				 "xover.socket.connect": [
-						"ws://localhost:8003",
-						{
-							 "message": "#messages",
-							 "hotreload": "event:hotreload",
-							 "databaseChange": "event:databaseChange"
-						}
-				 ]
+		},
+		"#": "#shell",
+		"#shell": null,
+		"#login": null,
+		"#loading": null,
+		"#settings": "settings.xml",
+		"px-daterange": "widgets/daterange.xhtml",
+		"px-combobox": "widgets/combobox.xhtml",
+		"px-printer": "widgets/printer.xhtml",
+		"px-loader": "widgets/loader.xhtml",
+		"google-chart": "widgets/google-chart.xhtml",
+		"#menu": "menus.xml",
+		"#globalization": [ "assets/globalization/headerText.${xo.session.locale.split('-').shift()}.resx", "assets/globalization/headerText.resx" ],
+		"#sitemap": "sitemap.xml",
+		"#factura_global": "factura_global_scoped.html",
+		"#facturas": {
+			"server:request": {
+				"FROM": "autofactura.tickets",
+				"^X-ORDER-BY": "[@tkt]"
 			}
-	 },
-	 "start": [
-			"loading.xslt",
-			"#ws",
-			"px-combobox",
-			"px-daterange",
-			"px-printer",
-			"px-to-excel",
-			"px-loader",
-			"#facturas",
-			{ "updateTunnel": [] }
+		},
+		"#ws": {
+			"xover.socket.connect": [
+				"ws://localhost:8003",
+				{
+					"message": "#messages",
+					"hotreload": "event:hotreload",
+					"databaseChange": "event:databaseChange"
+				}
+			]
+		}
+	},
+	"start": [
+		"loading.xslt",
+		"#ws",
+		"px-combobox",
+		"px-daterange",
+		"px-printer",
+		"px-to-excel",
+		"px-loader",
+		"#facturas",
+		{ "updateTunnel": [] }
 
-	 ],
-	 "settings": {
-			"^#.*": {
-				 "headers": {
-						"Cache-Control": "max-age=0",
-						"x-debugging": "true",
-						"expiry": 1
-				 }
-			},
-			"#factura_global": { "target": "@#shell main" },
-			"#facturas": {
-				 "headers": {
-						"x-root-node": "model",
-						"x-row-node": "row",
-						"x-xml-mode": "PATH",
-						"x-page-size": "10000"
-				 }
-			},
-			"~.asp": {
-				 "headers": {
-						"authorization": "${xover.session.id_token}"
-				 }
-			},
-			"server:facturar": {
-				 "headers": {
-						"x-payload-parameter-name": "@xml"
-				 }
-			},
-			"#shell": {
-				 "hash": ""
+	],
+	"settings": {
+		"^#.*": {
+			"headers": {
+				"Cache-Control": "max-age=0",
+				"x-debugging": "true",
+				"expiry": 1
 			}
-	 }
+		},
+		"#factura_global": { "target": "@#shell main" },
+		"#facturas": {
+			"headers": {
+				"x-root-node": "model",
+				"x-row-node": "row",
+				"x-xml-mode": "PATH",
+				"x-page-size": "10000"
+			}
+		},
+		"~.asp": {
+			"headers": {
+				"authorization": "${xover.session.id_token}"
+			}
+		},
+		"server:facturar": {
+			"headers": {
+				"x-payload-parameter-name": "@xml"
+			}
+		},
+		"#shell": {
+			"hash": ""
+		}
+	}
 }
