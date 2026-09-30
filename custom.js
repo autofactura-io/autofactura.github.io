@@ -57,14 +57,9 @@ function openCalendar({ label, defaultDate, maxDate }) {
 				 maxDate,
 
 				 onClose(selectedDates, dateStr, instance) {
-						let srcElement = (event.srcElement || {}).nodeType === Node.ELEMENT_NODE ? event.srcElement : null;
-
+						if (window.event?.target?.closest?.('#btnCalendarClear, #btnCalendarClose')) return;
 						// Solo cuando hay dos fechas cerramos y resolvemos
 						if (selectedDates.length === 2) {
-							 if (srcElement && event.srcElement.matches("#btnCalendarClear")) {
-									instance.clear();
-									selectedDates = [];
-							 }
 							 selectedDates = selectedDates.map(item => instance.formatDate(item, "Y-m-d"));
 							 let [from, to] = selectedDates;
 							 finish({
@@ -80,19 +75,17 @@ function openCalendar({ label, defaultDate, maxDate }) {
 
 			currentCalendarFinish = finish;
 
-			// 🔹 Botón borrar: limpia selección y deja el calendario listo
+			// Borrar limpia el rango; cerrar conserva la selección anterior.
 			if (btnClear) {
 				 btnClear.onclick = function () {
-						fp.clear();      // limpia selección + input
-						input.focus();   // opcional
-						fp.open();       // opcional: mantener visible el calendario
+					  fp.clear();
+					  finish({ from: '', to: '' });
 				 };
 			}
 
-			// 🔹 Botón cerrar: cancela y cierra
 			if (btnClose) {
 				 btnClose.onclick = function () {
-						finish(null);
+						finish({ cancelled: true });
 				 };
 			}
 
@@ -103,7 +96,7 @@ function openCalendar({ label, defaultDate, maxDate }) {
 
 function closeCalendar() {
 	 if (typeof currentCalendarFinish === 'function') {
-			currentCalendarFinish(null);
+			currentCalendarFinish({ cancelled: true });
 	 } else {
 			let modal = top.document.querySelector('#calendarModal');
 			if (modal) modal.style.display = 'none';

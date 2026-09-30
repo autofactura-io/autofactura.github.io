@@ -78,6 +78,10 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           }
         }]]>
 			</script>
+			<div class="d-flex align-items-center" role="status" aria-live="polite">
+				<div is="selection-summary" selection-source="#concentrador" summary="count" label="Conteo" format="number:0"></div>
+				<div is="selection-summary" selection-source="#concentrador" summary="sum" label="Suma" format="number:2"></div>
+			</div>
 			<xo-listener attribute="state:current_date_er"/>
 			<xo-listener node="//security/access"/>
 			<xsl:apply-templates/>

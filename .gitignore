@@ -349,3 +349,7 @@ healthchecksdb
 /.manifest
 /cache
 *.xcf
+/App_Data
+*.sql
+*.bas
+/AGENTS.md

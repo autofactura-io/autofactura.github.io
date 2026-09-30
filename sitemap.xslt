@@ -11,5 +11,5 @@ exclude-result-prefixes="#default session sitemap shell state"
 	<xsl:key name="sitemap-item" match="item" use="'#any'"/>
 	<xsl:key name="sitemap-menu-item" match="item[item]" use="@xo:id"/>
 
-	<xsl:include href="widgets/sitemap.xslt"/>
+	<xsl:include href="~/widgets/sitemap.xslt"/>
 </xsl:stylesheet>

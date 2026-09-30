@@ -1,0 +1,145 @@
+<section id="impuestos" class="container-fluid my-4" style="--tax-toolbar-h: 0px">
+	<style>
+		#impuestos .toolbar { position: sticky; top: 0; z-index: 1020; background: #fff; border-bottom: 1px solid #e9ecef; }
+		#impuestos .table thead th { position: sticky; top: var(--tax-toolbar-h); background: #fff; z-index: 1; }
+		#impuestos .rate { font-variant-numeric: tabular-nums; }
+	</style>
+
+	<header class="toolbar">
+		<div class="py-3">
+			<div class="d-flex flex-wrap gap-2 align-items-end">
+				<div class="me-auto">
+					<h1 class="h5 mb-0">Catálogo de impuestos</h1>
+					<small class="text-muted">Reglas fiscales por producto utilizadas en la factura global.</small>
+				</div>
+				<button id="tax-btn-reset" class="btn btn-outline-secondary btn-sm">Limpiar filtros</button>
+			</div>
+			<div class="row g-2 mt-2">
+				<div class="col-12 col-md-5">
+					<label class="form-label mb-1">Buscar producto o código</label>
+					<input id="tax-f-search" type="search" class="form-control form-control-sm" placeholder="Ej. 13.3 o PAELLA">
+				</div>
+				<div class="col-6 col-md-2">
+					<label class="form-label mb-1">Impuesto</label>
+					<select id="tax-f-type" class="form-select form-select-sm">
+						<option value="">Todos</option>
+						<option value="IVA">IVA</option>
+						<option value="IEPS">IEPS</option>
+						<option value="NONE">Sin impuesto</option>
+					</select>
+				</div>
+				<div class="col-6 col-md-2">
+					<label class="form-label mb-1">Estado</label>
+					<select id="tax-f-active" class="form-select form-select-sm">
+						<option value="">Todos</option>
+						<option value="1">Activos</option>
+						<option value="0">Inactivos</option>
+					</select>
+				</div>
+				<div class="col-12 col-md-3">
+					<label class="form-label mb-1">Cliente</label>
+					<select id="tax-f-client" class="form-select form-select-sm"><option value="">Todos</option></select>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<div class="row g-3 align-items-center my-3">
+		<div class="col"><div class="card"><div class="card-body py-2 d-flex flex-wrap gap-3">
+			<div><strong>Reglas:</strong> <span id="tax-count">0</span></div>
+			<div><strong>IVA:</strong> <span id="tax-count-iva">0</span></div>
+			<div><strong>IEPS:</strong> <span id="tax-count-ieps">0</span></div>
+			<div><strong>Sin impuesto:</strong> <span id="tax-count-none">0</span></div>
+			<div><strong>Activas:</strong> <span id="tax-count-active">0</span></div>
+		</div></div></div>
+	</div>
+
+	<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+		<thead><tr>
+			<th>Código</th><th>Producto</th><th>Cliente</th><th>Clasificación</th>
+			<th class="text-end">IVA</th><th class="text-end">IEPS</th><th>Precio incluye impuesto</th><th>Estado</th>
+		</tr></thead>
+		<tbody id="tax-tbody"></tbody>
+	</table></div>
+	<p id="tax-empty" class="text-muted text-center py-4 mb-0 d-none">No hay reglas que coincidan con los filtros.</p>
+
+	<script>
+		(function () {
+			const $ = id => document.getElementById(id);
+			const value = (row, names) => {
+				for (const name of names) {
+					const attribute = row.getAttributeNode(name);
+					if (attribute) return attribute.value;
+				}
+				return '';
+			};
+			const number = value => { const result = Number(value); return Number.isFinite(result) ? result : 0; };
+			const yes = value => ['1', 'true', 'True'].includes(String(value));
+			const escapeHtml = value => String(value || '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+			let rules = [];
+
+			function taxType(rule) {
+				if (rule.ieps > 0 && rule.iva > 0) return 'IVA + IEPS';
+				if (rule.ieps > 0) return 'IEPS';
+				if (rule.iva > 0) return 'IVA';
+				return 'NONE';
+			}
+
+			function populateClients() {
+				const clients = [...new Set(rules.map(rule => rule.client).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+				$('tax-f-client').innerHTML = '<option value="">Todos</option>' + clients.map(client => '<option value="' + escapeHtml(client) + '">' + escapeHtml(client) + '</option>').join('');
+			}
+
+			function applyFilters() {
+				const search = $('tax-f-search').value.trim().toLowerCase();
+				const type = $('tax-f-type').value;
+				const active = $('tax-f-active').value;
+				const client = $('tax-f-client').value;
+				const rows = rules.filter(rule => {
+					if (search && !(rule.code + ' ' + rule.description).toLowerCase().includes(search)) return false;
+					if (type && taxType(rule) !== type && !(type === 'IVA' && taxType(rule) === 'IVA + IEPS') && !(type === 'IEPS' && taxType(rule) === 'IVA + IEPS')) return false;
+					if (active !== '' && String(Number(rule.active)) !== active) return false;
+					if (client && rule.client !== client) return false;
+					return true;
+				});
+				render(rows);
+			}
+
+			function render(rows) {
+				$('tax-tbody').innerHTML = rows.map(rule => {
+					const type = taxType(rule);
+					const badge = type === 'IVA + IEPS' ? 'text-bg-warning' : type === 'IEPS' ? 'text-bg-info' : type === 'IVA' ? 'text-bg-primary' : 'text-bg-secondary';
+					return '<tr><td class="text-nowrap">' + escapeHtml(rule.code || '—') + '</td><td>' + escapeHtml(rule.description) + '</td><td>' + escapeHtml(rule.client || 'General') + '</td>' +
+						'<td><span class="badge ' + badge + '">' + type + '</span></td><td class="text-end rate">' + rule.iva.toFixed(2) + '%</td><td class="text-end rate">' + rule.ieps.toFixed(2) + '%</td>' +
+						'<td>' + (rule.includesTax ? 'Sí' : 'No') + '</td><td><span class="badge ' + (rule.active ? 'text-bg-success' : 'text-bg-secondary') + '">' + (rule.active ? 'Activa' : 'Inactiva') + '</span></td></tr>';
+				}).join('');
+				$('tax-empty').classList.toggle('d-none', rows.length > 0);
+				$('tax-count').textContent = rows.length;
+				$('tax-count-iva').textContent = rows.filter(rule => rule.iva > 0).length;
+				$('tax-count-ieps').textContent = rows.filter(rule => rule.ieps > 0).length;
+				$('tax-count-none').textContent = rows.filter(rule => rule.iva === 0 && rule.ieps === 0).length;
+				$('tax-count-active').textContent = rows.filter(rule => rule.active).length;
+			}
+
+			async function init() {
+				const model = await xo.stores['#tax_rules'].ready;
+				rules = [...model.select('model/row')].map(row => ({
+					code: value(row, ['product_code', '@product_code', 'codigo', '@codigo']),
+					description: value(row, ['product_description', '@product_description', 'descripcion', '@descripcion']),
+					client: value(row, ['client', '@client', 'cliente', '@cliente']),
+					iva: number(value(row, ['iva_rate', '@iva_rate', 'tasa_iva', '@tasa_iva'])),
+					ieps: number(value(row, ['ieps_rate', '@ieps_rate', 'tasa_ieps', '@tasa_ieps'])),
+					includesTax: yes(value(row, ['price_includes_tax', '@price_includes_tax'])),
+					active: yes(value(row, ['active', '@active']))
+				}));
+				populateClients();
+				applyFilters();
+				for (const id of ['tax-f-search', 'tax-f-type', 'tax-f-active', 'tax-f-client']) $(id).addEventListener(id === 'tax-f-search' ? 'input' : 'change', applyFilters);
+				$('tax-btn-reset').addEventListener('click', () => { $('tax-f-search').value = ''; $('tax-f-type').value = ''; $('tax-f-active').value = ''; $('tax-f-client').value = ''; applyFilters(); });
+				const toolbar = document.querySelector('#impuestos .toolbar');
+				document.querySelector('#impuestos').style.setProperty('--tax-toolbar-h', toolbar.offsetHeight + 'px');
+			}
+			init();
+		})();
+	</script>
+</section>

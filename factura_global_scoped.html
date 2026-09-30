@@ -21,6 +21,14 @@
 <section id="factura-global" class="fg">
 
 	<style>
+		#shell > footer:has(.fg-summary-row) {
+			display: flex !important;
+			align-items: center !important;
+		}
+
+		.fg-summary-row div {
+			align-self: center;
+		}
 		/* ==== Scope: solo aplica dentro de #factura-global ==== */
 		#factura-global {
 			--fg-toolbar-h: 3.25rem;
@@ -59,12 +67,352 @@
 
 		#factura-global .table thead th.sticky {
 			position: sticky;
+			top: var(--fg-toolbar-h);
 			background: #fff;
 			z-index: 3;
+			box-shadow: inset 0 -1px 0 #cfd6df;
+		}
+
+		/* Bootstrap aplica overflow-x a .table-responsive; eso impide que el
+			 encabezado se adhiera al área que realmente hace scroll. */
+		#factura-global .table-responsive {
+			overflow: visible;
+			position: relative;
+		}
+
+		#factura-global #fg-tbl {
+			width: 100%;
+			min-width: 100%;
+			border-collapse: separate;
+			border-spacing: 0;
+		}
+
+			#factura-global #fg-tbl thead th.sticky {
+				position: sticky;
+				top: var(--fg-toolbar-h);
+				z-index: 4;
+				background: #fff;
+				box-shadow: inset 0 -2px 0 #9aa6b2;
+			}
+
+		#factura-global #fg-data-binding {
+			display: flex;
+			flex-direction: column;
+		}
+
+			#factura-global #fg-data-binding > .d-flex {
+				order: 1;
+			}
+
+			#factura-global #fg-data-binding > .table-responsive {
+				order: 2;
+			}
+
+			#factura-global #fg-data-binding > #fg-footer {
+				order: 3;
+			}
+
+		#factura-global .fg-layout {
+			display: block;
+		}
+
+		#factura-global .fg-content {
+			width: 100%;
+			margin-block: 1rem;
+		}
+
+		#factura-global .fg-main {
+			min-width: 0;
+			width: 100%;
+		}
+
+		#factura-global .fg-header-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .5rem;
+			align-items: center;
+			justify-content: flex-end;
+		}
+
+			#factura-global .fg-header-actions .fg-pagination {
+				margin: 0 !important;
+				padding: 0;
+				border: 0;
+				gap: .5rem;
+			}
+
+		#factura-global .fg-footer {
+			position: sticky;
+			bottom: 0;
+			z-index: 3;
+			padding: .65rem 1rem;
+			background: rgba(255, 255, 255, .96);
+			border-top: 1px solid #ced4da;
+			box-shadow: 0 -3px 12px rgba(0, 0, 0, .06);
+		}
+
+		#factura-global #fg-footer > .row {
+			margin: 0;
+		}
+
+		#factura-global #fg-footer .card {
+			border: 0;
+		}
+
+		/* El modal vive fuera del contexto z-index de #shell > main. */
+		#fg-confirm {
+			z-index: 1060;
+		}
+
+		/* El wrapper del resumen debe ocupar todo el ancho disponible del shell,
+			 aunque todavía esté dentro del contenedor del módulo durante el render. */
+		#factura-global .fg-summary-row,
+		#shell-footer .fg-summary-row {
+			box-sizing: border-box;
+			width: 100% !important;
+			max-width: 100% !important;
+			flex: 0 0 100% !important;
+		}
+
+		/* El .col interno también debe salir del ancho restringido del padre. */
+		.fg-summary-row > .col {
+			box-sizing: border-box;
+			width: 100% !important;
+			max-width: 100% !important;
+			flex: 0 0 100% !important;
+		}
+
+		/* La tarjeta no debe conservar el ancho de una columna anterior del
+			 shell; el espacio disponible se reparte dentro de su cuerpo. */
+		.fg-summary-row .card,
+		.fg-summary-row .card-body {
+			box-sizing: border-box;
+			width: 100% !important;
+			max-width: none !important;
+		}
+
+		.fg-summary-row .card-body {
+			display: flex !important;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+			.fg-summary-row .card-body > .ms-auto {
+				margin-left: auto !important;
+				justify-content: flex-end;
+				flex-wrap: wrap;
+			}
+
+		#shell-footer .fg-summary-row {
+			margin: 0;
+		}
+
+		#shell-footer.fg-has-summary {
+			display: block !important;
+			padding: .5rem 1rem !important;
+		}
+
+			#shell-footer.fg-has-summary > #page_controls,
+			#shell-footer.fg-has-summary > #shell_buttons {
+				display: none !important;
+			}
+
+		#shell-footer .fg-summary-row .card {
+			width: 100%;
+			border: 0;
+		}
+
+		#shell-footer .fg-summary-row > .col {
+			flex: 0 0 100%;
+			max-width: 100%;
+		}
+
+		#shell-footer .fg-summary-row .card {
+			width: 100% !important;
+			max-width: none !important;
+		}
+
+		#shell-footer .fg-summary-row .card-body {
+			display: flex !important;
+			justify-content: space-between;
+			gap: .5rem 1rem !important;
+			align-items: center !important;
+			align-content: center;
+			min-height: 3rem;
+			width: 100%;
+		}
+
+		#shell-footer:has(.fg-summary-row),
+		#shell-footer .fg-summary-row,
+		#shell-footer .fg-summary-row > .col,
+		#shell-footer .fg-summary-row .card {
+			align-items: center !important;
+			align-self: center !important;
+		}
+
+		#shell-footer .fg-summary-row,
+		#shell-footer .fg-summary-row > .col,
+		#shell-footer .fg-summary-row .card,
+		#shell-footer .fg-summary-row .card-body,
+		#shell-footer .fg-summary-row .card-body > .ms-auto {
+			margin-block: 0 !important;
+			align-self: center !important;
+		}
+
+		#shell-footer .fg-summary-row,
+		#shell-footer .fg-summary-row > .col,
+		#shell-footer .fg-summary-row .card,
+		#shell-footer .fg-summary-row .card-body {
+			height: 100% !important;
+		}
+
+		#shell-footer .fg-summary-row .card-body > * {
+			align-self: center !important;
+			vertical-align: middle;
+		}
+
+		.fg-summary-row .card-body > * {
+			align-self: center !important;
+		}
+
+			#shell-footer .fg-summary-row .card-body > .ms-auto {
+				justify-self: end;
+				margin-left: 0 !important;
+				margin-left: auto !important;
+				justify-content: flex-end;
+				flex-wrap: wrap;
+			}
+
+		@media (max-width: 1100px) {
+			#shell-footer .fg-summary-row .card-body > .ms-auto {
+				justify-self: start;
+				margin-left: 0 !important;
+			}
+		}
+
+		#shell-footer .fg-pagination {
+			width: 100%;
+			margin: .5rem 0 0 !important;
+			padding-top: .5rem;
+			border-top: 1px solid #dee2e6;
+		}
+
+		#factura-global .fg-footer-summary {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .75rem 1.25rem;
+			align-items: center;
 		}
 
 		#factura-global .cursor-pointer {
 			cursor: pointer;
+		}
+
+		#factura-global .fg-status {
+			cursor: pointer;
+		}
+
+		/* Renglones internos de cada ticket: productos, impuestos y pagos. */
+		#factura-global #fg-tbody td {
+			vertical-align: top;
+		}
+
+			#factura-global #fg-tbody td.ticket-detail-cell {
+				padding: 0 !important;
+			}
+
+		#factura-global .ticket-detail-table {
+			width: 100%;
+			min-width: 36rem;
+			margin: 0;
+			table-layout: fixed;
+			border-collapse: collapse;
+		}
+
+			#factura-global .ticket-detail-table td {
+				padding: .18rem .3rem;
+				vertical-align: top;
+				line-height: 1.34;
+				border-bottom: 1px solid #edf0f4;
+			}
+
+			#factura-global .ticket-detail-table .ticket-detail-product {
+				width: 44%;
+				overflow-wrap: anywhere;
+				word-break: break-word;
+			}
+
+			#factura-global .ticket-detail-table .ticket-detail-money {
+				width: 14%;
+				white-space: nowrap;
+				text-align: right;
+			}
+
+			#factura-global .ticket-detail-table tbody tr:nth-child(odd) td {
+				background: rgba(13, 110, 253, .035);
+			}
+
+			#factura-global .ticket-detail-table .ticket-total-row td {
+				border-top: 2px solid #9aa6b2;
+				border-bottom: 0;
+				background: #f5f7fa;
+				font-weight: 700;
+			}
+
+		#factura-global .ticket-line,
+		#factura-global .ticket-payment-line {
+			min-height: 1.7rem;
+			padding: .18rem .3rem;
+			line-height: 1.34;
+			border-bottom: 1px solid #edf0f4;
+		}
+
+			#factura-global .ticket-line:nth-child(odd) {
+				background: rgba(13, 110, 253, .035);
+			}
+
+		#factura-global .ticket-payment-option {
+			cursor: pointer;
+			display: block;
+			flex: 1 1 auto;
+		}
+
+		#factura-global .ticket-payment-radio {
+			align-items: center;
+			cursor: pointer;
+			display: flex;
+			gap: .35rem;
+			margin: 0;
+			width: 100%;
+		}
+
+		#factura-global .ticket-payment-radio input {
+			margin: 0;
+		}
+
+		#factura-global .ticket-payment-list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+		}
+
+		#factura-global .ticket-payment-line {
+			align-items: center;
+		}
+
+		#factura-global .ticket-payment-line.is-selected {
+			font-weight: 600;
+			background: rgba(13, 110, 253, .06);
+		}
+
+		#factura-global .ticket-total-line {
+			min-height: 1.9rem;
+			margin-top: 0;
+			padding: .3rem;
+			line-height: 1.3;
+			border-top: 2px solid #9aa6b2;
+			background: #f5f7fa;
+			font-weight: 700;
 		}
 
 		#shell > main {
@@ -72,147 +420,260 @@
 		}
 	</style>
 
-	<div id="calendarModal"
-			 style="display:none; position:fixed; inset:0; background:#0005; z-index:999;">
-
-		<div style="background:white; width:320px; margin:80px auto; padding:20px; border-radius:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-
-			<label id="calendar" style="flex-basis:100%; display:block; margin-bottom:6px;">
-				Filtrar por rango:
-			</label>
-
-			<input id="rangePicker" placeholder="Selecciona el rango" style="flex:1;" />
-
-			<button type="button"
-							id="btnCalendarClear"
-							title="Borrar selección"
-							style="border:none; background:transparent; font-size:16px; cursor:pointer;">
-				🧹
-			</button>
-
-			<button type="button"
-							id="btnCalendarClose"
-							title="Cerrar"
-							style="border:none; background:transparent; font-size:18px; cursor:pointer;">
-				✖
-			</button>
-		</div>
-	</div>
 	<div id="top-loader"></div>
-	<header class="toolbar">
-		<div class="container-fluid py-3">
-			<div class="d-flex flex-wrap gap-2 align-items-end">
-				<div class="me-auto">
-					<h1 class="h5 mb-0">Factura global — selección de tickets</h1>
-					<small class="text-muted">Filtra, selecciona y factura los tickets no facturados</small>
-				</div>
-				<div class="text-end">
-					<div class="fw-semibold">Seleccionados: <span id="fg-sel-count">0</span></div>
-					<small class="text-muted">Máx. recomendado por factura: 1,000</small>
-				</div>
-				<div>
-					<button id="fg-btn-clear" class="btn btn-outline-secondary btn-sm" disabled>Borrar selección</button>
-					<button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled>Facturar selección</button>
-				</div>
-			</div>
+	<!-- Filtros, tabla y paginación -->
+	<div class="fg-content">
+		<div class="fg-layout">
+			<span id="fg-filter-anchor" hidden></span>
+			<section class="fg-main">
+				<header class="toolbar">
+					<div class="container-fluid py-3">
+						<div class="d-flex flex-wrap gap-2 align-items-end">
+							<div class="me-auto">
+								<h1 class="h5 mb-0">Factura global — selección de tickets</h1>
+								<small class="text-muted">Filtra, selecciona y factura los tickets no facturados</small>
+							</div>
+							<div id="fg-header-actions" class="fg-header-actions"></div>
+						</div>
 
-			<div class="row g-2 mt-2">
-				<div class="col-12 col-md-3">
-					<label class="form-label mb-1">Búsqueda por fecha</label>
-					<div class="d-flex gap-2">
-						<input id="fg-f-start" value="" type="date" data-open-calendar class="form-control form-control-sm" placeholder="mm/dd/yyyy">
-						<input id="fg-f-end" value="" type="date" data-open-calendar class="form-control form-control-sm" placeholder="mm/dd/yyyy">
 					</div>
-				</div>
-				<div class="col-12 col-md-2">
-					<label class="form-label mb-1">Folio</label>
-					<input id="fg-f-folio" type="search" class="form-control form-control-sm" placeholder="Ej. TCK-00123">
-				</div>
-				<div class="col-12 col-md-2">
-					<label class="form-label mb-1">Sucursal</label>
-					<input id="fg-f-sucursal" type="search" class="form-control form-control-sm" placeholder="Ej. Sucursal Centro">
-				</div>
-				<div class="col-12 col-md-2">
-					<label class="form-label mb-1">Forma de pago</label>
-					<input id="fg-f-formapago" type="search" class="form-control form-control-sm" placeholder="Ej. Efectivo">
-				</div>
-				<div class="col-6 col-md-2">
-					<label class="form-label mb-1">Rango de montos</label>
-					<div class="d-flex flex-col gap-">
-						<input id="fg-f-min" type="number" step="0.01" class="form-control form-control-sm" value="0.00">
-						<input id="fg-f-max" type="number" step="0.01" class="form-control form-control-sm" value="9999.99">
-					</div>
-				</div>
-				<div class="col-12 col-md-1 d-flex align-items-end gap-2">
-					<div class="d-flex flex-wrap gap-2">
-						<button id="fg-btn-apply" class="btn btn-outline-primary btn-sm w-100">Aplicar filtros</button>
-						<button id="fg-btn-reset" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</header>
+				</header>
+				<div id="fg-data-binding">
+					<footer id="fg-footer" class="fg-footer mb-3" aria-label="Resumen y acciones de facturación">
+						<div class="row g-3 align-items-center mb-2 fg-summary-row">
+							<div class="col">
+								<div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
+									<div class="ms-auto d-flex gap-2">
+										<button id="fg-btn-unselect-all" class="btn btn-light btn-sm">Quitar todos</button>
+										<button id="fg-btn-select-all" class="btn btn-light btn-sm">Seleccionar todos</button>
+										<button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
+										<button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
+										<button id="fg-btn-clear" class="btn btn-outline-secondary btn-sm" disabled>Borrar selección</button>
+									</div>
+									<div class="ms-auto d-flex gap-3">
+										<div><strong>Tickets:</strong> <span id="fg-ticketcount">0</span></div>
+										<div><strong>Seleccionados:</strong> <span id="fg-sel-count">0</span></div>
+										<div><strong>Subtotal:</strong> <span id="fg-sum-subtotal">$0.00</span></div>
+										<div><strong>IVA:</strong> <span id="fg-sum-iva">$0.00</span></div>
+										<div><strong>IEPS:</strong> <span id="fg-sum-ieps">$0.00</span></div>
+										<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
+										<button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled>Facturar selección</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</footer>
 
-	<!-- Resumen + tabla + paginación -->
-	<div class="container-fluid my-4">
-		<div class="row g-3 align-items-center mb-2">
-			<div class="col">
-				<div class="card">
-					<div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
-						<div><strong>Tickets:</strong> <span id="fg-ticketcount">0</span></div>
-						<div><strong>Subtotal:</strong> <span id="fg-sum-subtotal">$0.00</span></div>
-						<div><strong>IVA (<span id="fg-tasa">16</span>%):</strong> <span id="fg-sum-iva">$0.00</span></div>
-						<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
-						<div class="ms-auto d-flex gap-2">
-							<button id="fg-btn-unselect-all" class="btn btn-light btn-sm">Quitar todos</button>
-							<button id="fg-btn-select-all" class="btn btn-light btn-sm">Seleccionar todos</button>
-							<button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
-							<button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
+					<div class="fg-pagination d-flex justify-content-between align-items-center mt-3">
+						<small class="text-muted" id="fg-page-info">Página 1</small>
+						<div class="btn-group">
+							<button id="fg-btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
+							<button id="fg-btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
 						</div>
 					</div>
+
+					<div class="table-responsive">
+						<table class="table table-hover align-middle mb-0" id="fg-tbl">
+							<thead>
+								<tr>
+									<th class="sticky" style="width:42px;">
+										<input id="fg-chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles">
+									</th>
+									<th class="sticky">Fecha</th>
+									<th class="sticky">Folio</th>
+									<th class="sticky">Sucursal</th>
+									<th class="sticky">Forma de pago</th>
+									<th class="sticky">Producto</th>
+									<th class="sticky text-end">Subtotal</th>
+									<th class="sticky text-end">IVA</th>
+									<th class="sticky text-end">IEPS</th>
+									<th class="sticky text-end">Total</th>
+									<th class="sticky">Estado</th>
+								</tr>
+							</thead>
+							<tbody id="fg-tbody" xo-store="#facturas"></tbody>
+						</table>
+					</div>
 				</div>
-			</div>
-		</div>
-
-		<div class="d-flex justify-content-between align-items-center mt-3">
-			<small class="text-muted" id="fg-page-info">Página 1</small>
-			<div class="btn-group">
-				<button id="fg-btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
-				<button id="fg-btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
-			</div>
-		</div>
-
-		<div class="table-responsive">
-			<table class="table table-hover align-middle mb-0" id="fg-tbl">
-				<thead>
-					<tr>
-						<th class="sticky" style="width:42px;">
-							<input id="fg-chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles">
-						</th>
-						<th class="sticky">Fecha</th>
-						<th class="sticky">Folio</th>
-						<th class="sticky">Sucursal</th>
-						<th class="sticky">Forma de pago</th>
-						<th class="sticky text-end">Subtotal</th>
-						<th class="sticky text-end">IVA</th>
-						<th class="sticky text-end">Total</th>
-						<th class="sticky">Estado</th>
-					</tr>
-				</thead>
-				<tbody id="fg-tbody"></tbody>
-			</table>
+			</section>
 		</div>
 	</div>
 
 	<script>
+	globalThis.autofactura = globalThis.autofactura || {};
+	const fgFiltersReady = autofactura.mountTicketFilters(document.getElementById('fg-filter-anchor'), {
+		prefix: 'fg', applyId: 'fg-btn-apply', resetId: 'fg-btn-reset',
+		helpText: 'Solo cambia el detalle mostrado; la facturación siempre toma el ticket completo.'
+	});
+	autofactura.fg = autofactura.fg || {};
+	autofactura.fg.isValidRfc = function isValidRfc(value) {
+		const rfc = String(value || '').trim().toUpperCase();
+		return rfc === 'XAXX010101' || rfc === 'XAXX010101000' || rfc === 'XEXX010101000' ||
+			/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc);
+	};
+	autofactura.fg.updateConfirmationMode = function updateConfirmationMode() {
+		const fg = autofactura.fg;
+		const modal = document.getElementById('fg-confirm');
+		if (!modal) return;
+		const manualId = fg.pendingStatusTicketId;
+		const action = fg.pendingStatusAction;
+		const ticket = manualId ? fg.allTickets?.find(item => item.id == manualId) : null;
+		const context = fg.getInvoiceContext?.();
+		const rfc = document.getElementById('fg-cfdi-rfc')?.value?.trim() || '';
+		const validRfc = fg.isValidRfc(rfc);
+		const rfcField = modal.querySelector('#fg-cfdi-rfc')?.closest('.col-12');
+		const heading = modal.querySelector('.modal-body h2');
+		const message = modal.querySelector('.modal-body p');
+		const button = modal.querySelector('#fg-m-confirm');
+		const title = modal.querySelector('.modal-title');
+		if (action === 'unmark') {
+			if (title) title.textContent = 'Quitar marca de facturado';
+			if (button) button.textContent = 'Quitar marca';
+			if (message) message.textContent = 'Se quitará la marca de facturado y el ticket volverá a estar disponible.';
+			if (heading) heading.textContent = 'Confirmar cambio de estado';
+			if (rfcField) rfcField.hidden = true;
+			return;
+		}
+		const count = ticket ? 1 : (context?.selectedTickets.length || 0);
+		const total = ticket ? ticket.total : (context?.totals.total || 0);
+		const totalText = Number(total).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+		if (title) title.textContent = validRfc
+			? (ticket ? 'Confirmar factura del ticket' : 'Confirmar factura global')
+			: (ticket ? 'Marcar ticket como facturado' : 'Guardar estado de tickets');
+		if (button) button.textContent = validRfc ? 'Sí, facturar' : (ticket ? 'Marcar como facturado' : 'Guardar cambios');
+		if (message) message.textContent = validRfc
+			? `Se facturarán ${count} tickets por ${totalText}. Se generará un token para continuar en Contpaqi.`
+			: `Se guardarán ${count} tickets como facturados para «${rfc || '(sin receptor)'}». No se generará token porque el texto no tiene formato de RFC válido.`;
+		if (heading) heading.textContent = validRfc ? 'Parámetros de la factura' : 'Datos del marcado manual';
+		if (rfcField) rfcField.hidden = false;
+	};
+
+		autofactura.fg.payment_changed = function payment_changed() {
+			const fg = autofactura.fg;
+			const scope = this.scope;
+			const row = scope?.closest("row");
+			if (!row) return;
+			row.setAttribute("fp", this.value);
+
+			const rowId = row.getAttribute('id');
+			const ticket = fg.allTickets?.find(item =>
+				item.sourceId === rowId || item.xoId === rowId
+			);
+			if (ticket) {
+				ticket.formaPago = this.value;
+				if (!ticket.formasPago?.includes(this.value)) ticket.formasPago = [...(ticket.formasPago || []), this.value];
+			}
+		};
+		if (!autofactura.fg.paymentListenerBound) {
+			xo.listener.on(`change::.ticket-payment-radio > input`, autofactura.fg.payment_changed);
+			autofactura.fg.paymentListenerBound = true;
+		}
+
+		autofactura.fg.confirm_invoice_creation = async function confirm_invoice_creation() {
+			const fg = autofactura.fg;
+			const manualTicketId = fg?.pendingStatusTicketId || null;
+			const statusAction = fg?.pendingStatusAction || 'mark';
+			if (!fg || fg.invoiceInProgress || (!manualTicketId && (!fg.selected || fg.selected.size === 0))) return;
+			fg.invoiceInProgress = true;
+			const confirmButton = document.getElementById('fg-m-confirm');
+			if (confirmButton) confirmButton.disabled = true;
+			//const payload = new File([JSON.stringify({
+			//	 ticketIds: Array.from(selected),
+			//	 cfdi: {
+			//			rfc: $('fg-cfdi-rfc').value.trim(),
+			//			uso: $('fg-cfdi-uso').value,
+			//			metodo: $('fg-cfdi-metodo').value,
+			//			forma: $('fg-cfdi-forma').value
+			//	 }
+			//})], "@xml", { type: "text/plain" });
+			fg.showLoader(true);
+			try {
+				bootstrap.Modal.getInstance(document.querySelector('#fg-confirm')).hide();
+				if (manualTicketId) {
+					const ticket = fg.allTickets.find(item => item.id == manualTicketId);
+					if (!ticket) throw new Error('No se encontró el ticket seleccionado.');
+					let result;
+					if (statusAction === 'unmark') {
+						const payload = xover.xml.createDocument('<tickets action="unmark"><row id="' + String(ticket.sourceId).replaceAll('&', '&amp;').replaceAll('"', '&quot;') + '"/></tickets>');
+						result = await xover.server.facturar(new File([payload], '@xml', { type: 'text/xml' }));
+						ticket.estado = 'No facturado';
+						ticket.receptor = '';
+					} else {
+						const receptor = document.getElementById('fg-cfdi-rfc')?.value?.trim() || '';
+						if (!receptor) throw new Error('Indica el RFC o receptor para marcar el ticket como facturado.');
+						const payload = fg.buildInvoiceXml([manualTicketId], receptor);
+						result = await xover.server.facturar(new File([payload], '@xml', { type: 'text/xml' }));
+						const codigo = fg.isValidRfc(receptor) ? result.documentElement?.getAttribute('token') : null;
+						ticket.estado = 'Facturado';
+						ticket.receptor = receptor;
+						fg.selected.delete(manualTicketId);
+						fg.pendingStatusTicketId = null;
+						fg.pendingStatusAction = null;
+						fg.applyFilters();
+						alert(codigo
+							? `El ticket quedó marcado para ${receptor}. Continúa en el archivo de Contpaqi con el código ${codigo}.`
+							: `Se guardó el cambio. El ticket quedó marcado como facturado para ${receptor}; no se generó token porque el valor no tiene formato de RFC válido.`);
+						return;
+					}
+					fg.selected.delete(manualTicketId);
+					fg.pendingStatusTicketId = null;
+					fg.pendingStatusAction = null;
+					fg.applyFilters();
+					alert(statusAction === 'unmark' ? 'Se quitó la marca de facturado; el ticket volvió a estar disponible.' : `El ticket quedó marcado como facturado para ${ticket.receptor}.`);
+				} else {
+					const receptor = document.getElementById('fg-cfdi-rfc')?.value?.trim() || '';
+					if (!receptor) throw new Error('Indica el RFC o receptor para procesar los tickets seleccionados.');
+					const requestedIds = [...fg.selected];
+					const payload = fg.buildInvoiceXml(requestedIds, receptor);
+					const result = await xover.server.facturar(new File([payload], "@xml", { type: "text/xml" }));
+					const responseRows = [...result.getElementsByTagName('row')];
+					const updatedIds = new Set(responseRows.map(row => String(row.getAttribute('id') || '').toLowerCase()));
+					const missingIds = requestedIds.filter(id => !updatedIds.has(String(fg.allTickets.find(ticket => ticket.id == id)?.sourceId || '').toLowerCase()));
+					if (missingIds.length) {
+						alert(`El servidor confirmó ${updatedIds.size} de ${requestedIds.length} tickets. Se conservó la selección; verifica el procedimiento almacenado antes de reintentar.`);
+						return;
+					}
+					const codigo = fg.isValidRfc(receptor) ? result.documentElement?.getAttribute('token') : null;
+					for (const row of responseRows) {
+						const ticket = fg.allTickets.find(item => item.id == row.getAttribute('id'));
+						if (ticket) { ticket.estado = 'Facturado'; ticket.receptor = receptor; }
+					}
+					fg.selected.clear(); fg.applyFilters();
+					alert(codigo
+						? `Puede continuar en el archivo de Contpaqi con el siguiente código: ${codigo}`
+						: `Se guardaron los cambios. Los tickets quedaron marcados como facturados para ${receptor}; no se generó token porque el valor no tiene formato de RFC válido.`);
+				}
+			} catch (err) {
+				if (instanceOf.call(err, Error)) return Promise.reject(err);
+				let message = instanceOf.call(err.document, Node) && err.document.single(`//xo:message`) || "Error al facturar. Revisa el endpoint.";
+				console.error(err);
+				alert(message.textContent || message);
+			} finally {
+				fg.invoiceInProgress = false;
+				if (confirmButton) confirmButton.disabled = false;
+				fg.showLoader(false);
+			}
+		};
+		if (!autofactura.fg.confirmListenerBound) {
+			xo.listener.on(`click::#fg-m-confirm`, autofactura.fg.confirm_invoice_creation);
+			autofactura.fg.confirmListenerBound = true;
+		}
 		//const autofactura = {};
 		(function () {
 			const PAGE_SIZE = 50;
+			const fg = autofactura.fg;
 
-			autofactura.allTickets = [], autofactura.filtered = [], autofactura.pageIndex = 0, autofactura.selected = new Set();
+			fg.allTickets = [];
+			fg.filtered = [];
+			fg.pageIndex = 0;
+			/* Conservar la misma instancia permite que los listeners Xover ya
+			   registrados sigan actualizando la selección durante hotreload. */
+			if (!(fg.selected instanceof Set)) fg.selected = new Set();
+			fg.invoiceInProgress = false;
+			if (!('pendingStatusTicketId' in fg)) fg.pendingStatusTicketId = null;
+			if (!('pendingStatusAction' in fg)) fg.pendingStatusAction = null;
 
-			let allTickets = autofactura.allTickets, filtered = autofactura.filtered, pageIndex = autofactura.pageIndex, selected = autofactura.selected;
-
+			let allTickets = fg.allTickets, filtered = fg.filtered, pageIndex = fg.pageIndex, selected = fg.selected;
 			function showLoader(on) {
 				const el = document.getElementById('top-loader');
 				if (!el) return;
@@ -220,54 +681,174 @@
 				if (!on) setTimeout(() => { el.style.width = '0%'; }, 300);
 			}
 			const $ = (id) => document.getElementById(id);
+			const numberValue = (value, fallback = 0) => {
+				const number = Number(value);
+				return Number.isFinite(number) ? number : fallback;
+			};
+			const roundMoney = (value) => Math.round((numberValue(value) + Number.EPSILON) * 100) / 100;
+			const rateValue = (value, fallback = 0) => {
+				const rate = numberValue(value, fallback);
+				return Math.abs(rate) > 1 ? rate / 100 : rate;
+			};
+			const attrNumber = (row, names, fallback = 0) => {
+				for (const name of names) {
+					const attr = row.getAttributeNode(name);
+					if (attr && attr.value !== '') return numberValue(attr.value, fallback);
+				}
+				return fallback;
+			};
+			const attrRate = (row, names, fallback = 0) => {
+				for (const name of names) {
+					const attr = row.getAttributeNode(name);
+					if (attr && attr.value !== '') return rateValue(attr.value, fallback);
+				}
+				return fallback;
+			};
+			const sourceXoId = (node, fallback = '') =>
+				node.getAttributeNS?.(xover.spaces["xover"], 'id') ||
+				node.getAttribute('xo:id') ||
+				fallback;
+			const escapeHtml = (value) => String(value ?? '')
+				.replaceAll('&', '&amp;')
+				.replaceAll('"', '&quot;')
+				.replaceAll('<', '&lt;')
+				.replaceAll('>', '&gt;');
 
 			async function seed() {
 				let model = await xo.stores["#facturas"].ready;
 				for (let row of model.select(`model/row`)) {
 					const i = row.getAttribute("id");
 					const d = row.getAttribute("dt").parseDate();
-					const subtotal = +(row.getAttribute("st") || 0);
-					const tasa = (row.getAttributeNode("tasa") || $('fg-tasa')).value / 100;
-					const iva = +(subtotal * tasa).toFixed(2);
-					const total = +(subtotal + iva).toFixed(2);
+					const subtotal = roundMoney(row.getAttribute("st"));
+					const tasaIVA = attrRate(row, ["tasaIVA", "iva_tasa", "tasa"], 0.16);
+					const tasaIEPS = attrRate(row, ["tasaIEPS", "ieps_tasa"], 0);
+					const itemNodes = row.select('items/item') || row.select('item') || [];
+					const items = [...itemNodes].map((item, itemIndex) => ({
+						xoId: sourceXoId(item, 'item_' + i + '_' + itemIndex),
+						codigo: item.getAttribute('codigo') || '',
+						descripcion: item.getAttribute('descripcion') || '',
+						precioArticulo: roundMoney(item.getAttribute('precio_articulo')),
+						precioExtras: roundMoney(item.getAttribute('precio_extras')),
+						importe: roundMoney(item.getAttribute('importe')),
+						tasaIVA: attrRate(item, ['tasa_iva'], tasaIVA),
+						tasaIEPS: attrRate(item, ['tasa_ieps'], tasaIEPS),
+						iva: roundMoney(attrNumber(item, ['iva'], 0)),
+						ieps: roundMoney(attrNumber(item, ['ieps'], 0))
+					}));
+					const ivaFromXml = attrNumber(row, ["iva", "iva_total"], NaN);
+					const iepsFromXml = attrNumber(row, ["ieps", "ieps_total"], NaN);
+					const iva = Number.isFinite(ivaFromXml) ? roundMoney(ivaFromXml) : roundMoney(items.reduce((sum, item) => sum + item.iva, 0) || subtotal * tasaIVA);
+					const ieps = Number.isFinite(iepsFromXml) ? roundMoney(iepsFromXml) : roundMoney(items.reduce((sum, item) => sum + item.ieps, 0) || subtotal * tasaIEPS);
+					const totalFromXml = attrNumber(row, ["total"], NaN);
+					const total = Number.isFinite(totalFromXml) ? roundMoney(totalFromXml) : roundMoney(subtotal + iva + ieps);
+					const formaPago = row.getAttribute("fp") || '';
+					const formaPagoSugerida = row.getAttribute("fp_sugerida") || '';
+					const paymentNodes = row.select('payments/payment') || row.select('payments/pago') || [];
+					const pagos = [...paymentNodes].map((payment, paymentIndex) => ({
+						xoId: sourceXoId(payment, 'payment_' + i + '_' + paymentIndex),
+						formaPago: payment.getAttribute('forma_pago') || payment.getAttribute('forma') || payment.getAttribute('fp') || '',
+						monto: roundMoney(payment.getAttribute('monto'))
+					})).filter(payment => payment.formaPago);
+					const formasPago = [...new Set(pagos.map(payment => payment.formaPago))];
+					if (!formasPago.length && formaPago) formasPago.push(formaPago);
 					allTickets.push({
-						id: i, fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
+						id: i,
+						sourceId: row.getAttribute("id") || '',
+						xoId: sourceXoId(row, 'ticket_' + i),
+						cliente: row.getAttribute("cte") || '',
+						origenDatos: row.getAttribute("od") || '',
+						receptor: row.getAttribute("receptor") || '',
+						fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
 						sucursal: row.getAttribute("suc"),
-						formaPago: row.getAttribute("fp"),
-						subtotal, iva, total, estado: 'No facturado'//Math.random() < 0.7 ? 'No facturado' : 'Facturado'
+						formaPago, formaPagoSugerida, formasPago, pagos, pagosDetallados: paymentNodes.length > 0,
+						subtotal, tasaIVA, tasaIEPS, iva, ieps, total, items,
+						estado: row.getAttribute('receptor') ? 'Facturado' : 'No facturado'
 					});
 				}
 			}
 
+			function populatePaymentFilter() {
+				const select = $('fg-f-formapago');
+				const forms = [...new Set(allTickets.flatMap(ticket => ticket.formasPago || []).filter(Boolean))]
+					.sort((a, b) => a.localeCompare(b, 'es'));
+				select.innerHTML = '<option value="">Todos</option>' +
+					forms.map(form => '<option value="' + escapeHtml(form) + '">' + escapeHtml(form) + '</option>').join('');
+			}
+
+			function populateBranchFilter() {
+				const select = $('fg-f-sucursal');
+				const branches = [...new Set(allTickets.map(ticket => ticket.sucursal).filter(Boolean))]
+					.sort((a, b) => a.localeCompare(b, 'es'));
+				select.innerHTML = '<option value="">Todos</option>' +
+					branches.map(branch => '<option value="' + escapeHtml(branch) + '">' + escapeHtml(branch) + '</option>').join('');
+			}
+
+			function resetFilterValues() {
+				['fg-f-start', 'fg-f-end', 'fg-f-folio', 'fg-f-sucursal', 'fg-f-formapago', 'fg-f-producto', 'fg-f-pago-unico', 'fg-f-impuestos'].forEach(id => $(id).value = '');
+				$('fg-f-incluir-productos').checked = false;
+				$('fg-f-estado').value = 'No facturado';
+				$('fg-f-min').value = '0.00';
+				$('fg-f-max').value = '9999.99';
+			}
+
 			function money(n) { return n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }); }
+			function detailMoney(n) { return Number(n) === 0 ? '&nbsp;' : money(n); }
+			function setText(id, value) {
+				const element = $(id);
+				if (element) element.textContent = value;
+			}
+
+			function updateFilterIndicators() {
+				autofactura.updateTicketFilterIndicators($('fg-sidebar'), 'fg');
+			}
 
 			function applyFilters() {
+				updateFilterIndicators();
 				showLoader(true)
 				const fstart = $('fg-f-start').value;
 				const fend = $('fg-f-end').value;
-				const ffolio = $('fg-f-folio').value.trim().toLowerCase();
+				const ffolios = $('fg-f-folio').value
+					.split(',')
+					.map(folio => folio.trim().toLowerCase())
+					.filter(Boolean);
 				const fsucursal = $('fg-f-sucursal').value.trim().toLowerCase();
 				const fformaPago = $('fg-f-formapago').value.trim().toLowerCase();
+				const fproductos = autofactura.parseTicketFilterTerms($('fg-f-producto').value);
+				const fpagoUnico = $('fg-f-pago-unico').value;
+				const fimpuestos = $('fg-f-impuestos').value;
+				const festado = $('fg-f-estado').value;
 				const fmin = parseFloat($('fg-f-min').value);
 				const fmax = parseFloat($('fg-f-max').value);
 				filtered = allTickets.filter(t => {
-					if (t.estado !== 'No facturado') return false;
+					if (festado && t.estado !== festado) return false;
 					if (fstart && t.fecha < fstart) return false;
 					if (fend && t.fecha > fend) return false;
 					if (!isNaN(fmin) && t.total < fmin) return false;
 					if (!isNaN(fmax) && t.total > fmax) return false;
-					if (ffolio) {
+					if (ffolios.length) {
 						const hay = (t.folio || '').toLowerCase();
-						if (!hay.includes(ffolio)) return false;
+						if (!ffolios.some(folio => hay.includes(folio))) return false;
 					}
 					if (fsucursal) {
 						const hay = (t.sucursal || '').toLowerCase();
 						if (!hay.includes(fsucursal)) return false;
 					}
 					if (fformaPago) {
-						const hay = (t.formaPago || '').toLowerCase();
-						if (!hay.includes(fformaPago)) return false;
+						const hay = (t.formasPago || [t.formaPago]).some(forma => forma.toLowerCase() === fformaPago);
+						if (!hay) return false;
 					}
+					if (fproductos.length) {
+						const hay = t.items.some(item => productMatches(item, fproductos));
+						if (!hay) return false;
+					}
+					if (fpagoUnico) {
+						/* Sin detalle de pagos no se puede afirmar que el ticket sea de pago único. */
+						if (!t.pagosDetallados || (fpagoUnico === '1' && t.formasPago.length !== 1) || (fpagoUnico === '0' && t.formasPago.length <= 1)) return false;
+					}
+					if (fimpuestos === 'iva' && t.iva <= 0) return false;
+					if (fimpuestos === 'ieps' && t.ieps <= 0) return false;
+					if (fimpuestos === 'ambos' && (t.iva <= 0 || t.ieps <= 0)) return false;
+					if (fimpuestos === 'ninguno' && (t.iva > 0 || t.ieps > 0)) return false;
 					return true;
 				});
 				pageIndex = 0;
@@ -280,25 +861,81 @@
 				return filtered.slice(s, s + PAGE_SIZE);
 			}
 
+			function productMatches(item, terms) {
+				const text = (item.codigo + ' ' + item.descripcion).toLowerCase();
+				return terms.some(term => text.includes(term));
+			}
+
 			function render() {
 				const tbody = $('fg-tbody');
 				tbody.innerHTML = '';
 				const rows = pageItems();
+				const productTerms = autofactura.parseTicketFilterTerms($('fg-f-producto').value);
+				const onlyMatchingProducts = productTerms.length > 0 && !$('fg-f-incluir-productos').checked;
 				for (const t of rows) {
 					const tr = document.createElement('tr');
+					tr.setAttribute('xo:id', 'fg-row-' + t.id);
+					tr.setAttribute('xo-scope', t.xoId);
+					const visibleItems = onlyMatchingProducts
+						? t.items.filter(item => productMatches(item, productTerms))
+						: t.items;
+					const detailRows = visibleItems.length
+						? visibleItems.map(item => `
+								<tr>
+									<td class="ticket-detail-product" xo-scope="${escapeHtml(item.xoId)}" xo-slot="descripcion">${escapeHtml(item.descripcion || item.codigo)}</td>
+									<td class="ticket-detail-money" xo-scope="${escapeHtml(item.xoId)}" xo-slot="importe">${detailMoney(item.importe)}</td>
+									<td class="ticket-detail-money" xo-scope="${escapeHtml(item.xoId)}" xo-slot="iva">${detailMoney(item.iva)}</td>
+									<td class="ticket-detail-money" xo-scope="${escapeHtml(item.xoId)}" xo-slot="ieps">${detailMoney(item.ieps)}</td>
+									<td class="ticket-detail-money" xo-scope="${escapeHtml(item.xoId)}" xo-slot="total">${detailMoney(item.importe + item.iva + item.ieps)}</td>
+								</tr>`).join('')
+						: `<tr><td class="ticket-detail-product text-muted">Sin producto</td><td colspan="4"></td></tr>`;
+					const detailTable = `
+							<table class="ticket-detail-table" data-ticket-detail="${escapeHtml(t.id)}">
+								<colgroup><col class="ticket-detail-product"><col class="ticket-detail-money"><col class="ticket-detail-money"><col class="ticket-detail-money"><col class="ticket-detail-money"></colgroup>
+								<tbody>
+									${detailRows}
+									<tr class="ticket-total-row">
+										<td class="ticket-detail-product" xo-scope="${escapeHtml(t.xoId)}" xo-slot="descripcion">${onlyMatchingProducts ? 'Total ticket (todos los productos)' : 'Total ticket'}</td>
+										<td class="ticket-detail-money" xo-scope="${escapeHtml(t.xoId)}" xo-slot="st">${money(t.subtotal)}</td>
+										<td class="ticket-detail-money" xo-scope="${escapeHtml(t.xoId)}" xo-slot="iva">${money(t.iva)}</td>
+										<td class="ticket-detail-money" xo-scope="${escapeHtml(t.xoId)}" xo-slot="ieps">${money(t.ieps)}</td>
+										<td class="ticket-detail-money" xo-scope="${escapeHtml(t.xoId)}" xo-slot="total">${money(t.total)}</td>
+									</tr>
+								</tbody>
+							</table>`;
+					const paymentsCell = t.pagos.length
+						? '<div class="ticket-payment-list small" role="radiogroup" aria-label="Formas de pago">' +
+						t.pagos.map(payment =>
+							'<div class="ticket-payment-line d-flex justify-content-between gap-2' + (payment.formaPago === t.formaPago ? ' is-selected' : '') + '">' +
+							'<label class="ticket-payment-radio" role="radio" aria-checked="' + (payment.formaPago === t.formaPago ? 'true' : 'false') + '" data-payment-option="true" xo-scope="' + escapeHtml(payment.xoId) + '" xo-slot="forma_pago">' +
+							'<input type="radio" name="fg-payment-' + escapeHtml(t.id) + '" value="' + escapeHtml(payment.formaPago) + '"' + (payment.formaPago === t.formaPago ? ' checked' : '') + '>' +
+							'<span class="ticket-payment-option">' + escapeHtml(payment.formaPago) + '</span>' +
+							'<span class="text-nowrap" xo-scope="' + escapeHtml(payment.xoId) + '" xo-slot="monto">' + money(payment.monto) + '</span>' +
+							'</label></div>'
+						).join('') + '</div>'
+						: '<span class="small text-muted">' + escapeHtml(t.formaPago || 'Sin forma de pago') + '</span>';
 					tr.innerHTML = `
-																		<td><input class="form-check-input fg-row" type="checkbox" data-id="${t.id}" ${selected.has(t.id) ? 'checked' : ''}></td>
-																		<td>${t.fecha}</td>
-																		<td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
-																		<td>${t.sucursal}</td>
-																		<td>${t.formaPago}</td>
-																		<td class="text-end">${money(t.subtotal)}</td>
-																		<td class="text-end">${money(t.iva)}</td>
-																		<td class="text-end">${money(t.total)}</td>
-																		<td><span class="badge text-bg-warning">No facturado</span></td>`;
+													<td><input class="form-check-input fg-row" type="checkbox" data-id="${t.id}" ${selected.has(t.id) ? 'checked' : ''} ${t.estado === 'Facturado' ? 'disabled title="El ticket ya está marcado como facturado"' : ''}></td>
+																			<td>${t.fecha}</td>
+																			<td class="cursor-pointer text-primary text-decoration-underline" data-id="${t.id}" title="Ver detalle">${t.folio}</td>
+																<td>${t.sucursal}</td>
+																		<td>${paymentsCell}</td>
+																																																																													<td class="ticket-detail-cell" colspan="5">${detailTable}</td>
+																	<td><button type="button" class="badge ${t.estado === 'Facturado' ? 'text-bg-success' : 'text-bg-warning'} border-0 fg-status" data-id="${escapeHtml(t.id)}" data-action="${t.estado === 'Facturado' ? 'unmark' : 'mark'}" title="${t.estado === 'Facturado' ? 'Quitar marca de facturado' : 'Marcar como facturado'}">${t.estado === 'Facturado' ? 'Facturado' + (t.receptor && t.receptor.trim().toLowerCase() !== 'facturado' ? ' · ' + escapeHtml(t.receptor) : '') : 'No facturado'}</button></td>`;
+					const cells = tr.querySelectorAll(':scope > td');
+					const bindCell = (cell, slot, target = cell) => {
+						if (!target) return;
+						target.setAttribute('xo-scope', t.xoId);
+						target.setAttribute('xo-slot', slot);
+					};
+					bindCell(cells[1], 'dt');
+					bindCell(cells[2], 'tkt', cells[2]?.querySelector('span'));
+					bindCell(cells[3], 'suc');
 					tbody.appendChild(tr);
 				}
-				$('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
+				const selectableRows = rows.filter(row => row.estado === 'No facturado');
+				$('fg-chk-all').disabled = selectableRows.length === 0;
+				$('fg-chk-all').checked = selectableRows.length > 0 && selectableRows.every(row => selected.has(row.id));
 				const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 				$('fg-page-info').textContent = `Página ${pageIndex + 1} de ${totalPages} — ${filtered.length} tickets`;
 				$('fg-btn-prev').disabled = pageIndex === 0;
@@ -307,160 +944,352 @@
 			}
 
 			function updateSummary() {
-				let subtotal = 0, iva = 0, total = 0;
+				let subtotal = 0, iva = 0, ieps = 0, total = 0;
 				for (const id of selected) {
 					const t = allTickets.find(x => x.id == id); if (!t) continue;
-					subtotal += t.subtotal; iva += t.iva; total += t.total;
+					subtotal += t.subtotal; iva += t.iva; ieps += t.ieps; total += t.total;
 				}
-				$('fg-ticketcount').textContent = selected.size;
-				$('fg-sum-subtotal').textContent = money(subtotal);
-				$('fg-sum-iva').textContent = money(iva);
-				$('fg-sum-total').textContent = money(total);
-				$('fg-sel-count').textContent = selected.size;
-				$('fg-m-count').textContent = selected.size;
-				$('fg-m-total').textContent = money(total);
+				setText('fg-ticketcount', selected.size);
+				setText('fg-sum-subtotal', money(subtotal));
+				setText('fg-sum-iva', money(iva));
+				setText('fg-sum-ieps', money(ieps));
+				setText('fg-sum-total', money(total));
+				setText('fg-sel-count', selected.size);
+				setText('fg-m-count', selected.size);
+				setText('fg-m-total', money(total));
 			}
 
 			function updateButtons() {
 				const has = selected.size > 0;
-				$('fg-btn-clear').disabled = !has;
-				$('fg-btn-invoice').disabled = !has;
+				const clearButton = $('fg-btn-clear');
+				const invoiceButton = $('fg-btn-invoice');
+				if (clearButton) clearButton.disabled = !has;
+				if (invoiceButton) invoiceButton.disabled = !has;
+			}
+
+			function attachShellFooter() {
+				const moduleFooter = $('fg-footer');
+				const shellFooter = $('shell-footer') || document.querySelector('#shell > footer');
+				if (!(shellFooter && moduleFooter.hasChildNodes())) return;
+				shellFooter.replaceContent(...moduleFooter.childNodes)
+				//const summary = moduleFooter?.querySelector('.fg-summary-row');
+				//if (!shellFooter) return;
+				//shellFooter.classList.add('fg-has-summary');
+
+				//const summaries = [...shellFooter.querySelectorAll('.fg-summary-row')];
+				//const shellSummary = summaries[0] || null;
+				//summaries.slice(1).forEach(node => node.remove());
+				//if (summary && summary !== shellSummary) {
+				//	if (shellSummary) summary.remove();
+				//	else shellFooter.appendChild(summary);
+				//}
+
+				//if (moduleFooter && !moduleFooter.querySelector('.fg-summary-row') && !moduleFooter.querySelector('.fg-pagination')) {
+				//	moduleFooter.remove();
+				//}
+			}
+
+			function attachHeaderPagination() {
+				const headerActions = $('fg-header-actions');
+				const pagination = document.querySelector('#fg-data-binding .fg-pagination');
+				if (headerActions && pagination && pagination.parentElement !== headerActions) {
+					headerActions.appendChild(pagination);
+				}
+			}
+
+			function xmlAttr(value) {
+				return String(value ?? '')
+					.replaceAll('&', '&amp;')
+					.replaceAll('"', '&quot;')
+					.replaceAll('<', '&lt;')
+					.replaceAll('>', '&gt;');
+			}
+
+			function selectedTotals(ids = [...selected]) {
+				return [...ids].reduce((totals, id) => {
+					const ticket = allTickets.find(item => item.id == id);
+					if (!ticket) return totals;
+					totals.subtotal += ticket.subtotal;
+					totals.iva += ticket.iva;
+					totals.ieps += ticket.ieps;
+					totals.total += ticket.total;
+					return totals;
+				}, { subtotal: 0, iva: 0, ieps: 0, total: 0 });
+			}
+
+			function taxXml(ticket) {
+				if (ticket.items.length) return ticket.items.flatMap(item => {
+					const taxes = [];
+					if (item.iva) taxes.push('<tax type="IVA" rate="' + xmlAttr((item.tasaIVA * 100).toFixed(2)) + '" amount="' + xmlAttr(item.iva.toFixed(2)) + '"/>');
+					if (item.ieps) taxes.push('<tax type="IEPS" rate="' + xmlAttr((item.tasaIEPS * 100).toFixed(2)) + '" amount="' + xmlAttr(item.ieps.toFixed(2)) + '"/>');
+					return taxes;
+				}).join('');
+				const taxes = [];
+				if (ticket.iva) taxes.push('<tax type="IVA" rate="' + xmlAttr((ticket.tasaIVA * 100).toFixed(2)) + '" amount="' + xmlAttr(ticket.iva.toFixed(2)) + '"/>');
+				if (ticket.ieps) taxes.push('<tax type="IEPS" rate="' + xmlAttr((ticket.tasaIEPS * 100).toFixed(2)) + '" amount="' + xmlAttr(ticket.ieps.toFixed(2)) + '"/>');
+				return taxes.join('');
+			}
+
+			function buildInvoiceXml(ids = [...selected], receptorValue = $('fg-cfdi-rfc').value.trim()) {
+				const totals = selectedTotals(ids);
+				const rows = [...ids].map(id => {
+					const ticket = allTickets.find(item => item.id == id);
+					if (!ticket) return '';
+					const items = ticket.items.map(item => '<item codigo="' + xmlAttr(item.codigo) +
+						'" descripcion="' + xmlAttr(item.descripcion) +
+						'" precio_articulo="' + xmlAttr(item.precioArticulo.toFixed(2)) +
+						'" precio_extras="' + xmlAttr(item.precioExtras.toFixed(2)) +
+						'" importe="' + xmlAttr(item.importe.toFixed(2)) +
+						'" tasa_iva="' + xmlAttr((item.tasaIVA * 100).toFixed(2)) +
+						'" tasa_ieps="' + xmlAttr((item.tasaIEPS * 100).toFixed(2)) +
+						'" iva="' + xmlAttr(item.iva.toFixed(2)) +
+						'" ieps="' + xmlAttr(item.ieps.toFixed(2)) + '"/>').join('');
+					return '<row id="' + xmlAttr(ticket.sourceId) +
+						'" folio="' + xmlAttr(ticket.folio) +
+						'" cliente="' + xmlAttr(ticket.cliente) +
+						'" origen_datos="' + xmlAttr(ticket.origenDatos) +
+						'" forma_pago="' + xmlAttr(ticket.formaPago) +
+						'" forma_pago_sugerida="' + xmlAttr(ticket.formaPagoSugerida) +
+						'" subtotal="' + xmlAttr(ticket.subtotal.toFixed(2)) +
+						'" iva="' + xmlAttr(ticket.iva.toFixed(2)) +
+						'" ieps="' + xmlAttr(ticket.ieps.toFixed(2)) +
+						'" total="' + xmlAttr(ticket.total.toFixed(2)) +
+						'" tasaIVA="' + xmlAttr((ticket.tasaIVA * 100).toFixed(2)) +
+						'" tasaIEPS="' + xmlAttr((ticket.tasaIEPS * 100).toFixed(2)) +
+						'"><items>' + items + '</items><taxes>' + taxXml(ticket) + '</taxes></row>';
+				}).join('');
+				const root = xover.xml.createDocument('<tickets version="2" taxModel="ticket-summary">' + rows + '</tickets>');
+				for (const [attr, value] of Object.entries({
+					receptor: receptorValue,
+					conteo: ids.length,
+					subtotal: totals.subtotal.toFixed(2),
+					iva: totals.iva.toFixed(2),
+					ieps: totals.ieps.toFixed(2),
+					total: totals.total.toFixed(2),
+					tasaIVA: '16.00',
+					tasaIEPS: totals.ieps ? '8.00' : '0.00',
+					tasa: '16'
+				})) root.documentElement.setAttribute(attr, value);
+				return root;
+			}
+
+			function bindStableSelectionEvents() {
+				if (autofactura.fgSelectionBound) return;
+				autofactura.fgSelectionBound = true;
+				document.addEventListener('change', (event) => {
+					const input = event.target;
+					if (input.matches?.('#factura-global #fg-chk-all')) {
+						if (input.checked) {
+							for (const row of pageItems()) if (row.estado === 'No facturado') selected.add(row.id);
+						} else {
+							for (const row of pageItems()) selected.delete(row.id);
+						}
+						render();
+						return;
+					}
+					if (!input.matches?.('#factura-global #fg-tbody .fg-row')) return;
+					const id = input.dataset.id;
+					input.checked ? selected.add(id) : selected.delete(id);
+					updateSummary();
+					updateButtons();
+					const rows = pageItems();
+					const selectAll = $('#fg-chk-all');
+					if (selectAll) selectAll.checked = rows.length > 0 && rows.every(row => selected.has(row.id));
+				});
+			}
+
+			function bindStablePaginationEvents() {
+				if (autofactura.fgPaginationBound) return;
+				autofactura.fgPaginationBound = true;
+				document.addEventListener('click', (event) => {
+					const button = event.target.closest?.('#fg-btn-prev, #fg-btn-next');
+					if (!button || button.disabled) return;
+					const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+					if (button.id === 'fg-btn-prev' && pageIndex > 0) {
+						pageIndex--;
+						render();
+					} else if (button.id === 'fg-btn-next' && pageIndex < totalPages - 1) {
+						pageIndex++;
+						render();
+					}
+				});
+			}
+
+			function bindStableFilterEvents() {
+				if (autofactura.fgFiltersBound) return;
+				autofactura.fgFiltersBound = true;
+				document.addEventListener('change', (event) => {
+					if (!event.target.matches?.('#fg-sidebar #fg-filter-panel input, #fg-sidebar #fg-filter-panel select')) return;
+					if (event.target.matches('#fg-f-incluir-productos')) {
+						render();
+						return;
+					}
+					applyFilters();
+				});
+				document.addEventListener('input', (event) => {
+					if (event.target.matches?.('#fg-sidebar #fg-filter-panel input')) updateFilterIndicators();
+				});
+				document.addEventListener('click', (event) => {
+					if (event.target.closest?.('#fg-btn-apply')) {
+						event.preventDefault();
+						autofactura.captureTicketFilters($('fg-sidebar'), 'fg');
+						showLoader(true);
+						setTimeout(() => { applyFilters(); showLoader(false); }, 150);
+						return;
+					}
+					if (event.target.closest?.('#fg-btn-reset')) {
+						event.preventDefault();
+						resetFilterValues();
+						autofactura.captureTicketFilters($('fg-sidebar'), 'fg');
+						applyFilters();
+					}
+				});
+			}
+
+			function bindStableFooterEvents() {
+				if (autofactura.fgFooterBound) return;
+				autofactura.fgFooterBound = true;
+				if (!autofactura.fgConfirmModeListenerBound) {
+					document.addEventListener('input', (event) => {
+						if (event.target.matches?.('#fg-cfdi-rfc')) autofactura.fg.updateConfirmationMode?.();
+					});
+					autofactura.fgConfirmModeListenerBound = true;
+				}
+				document.addEventListener('click', (event) => {
+					const statusButton = event.target.closest?.('#factura-global #fg-tbody .fg-status');
+					if (statusButton) {
+						event.preventDefault();
+						const ticket = allTickets.find(item => item.id == statusButton.dataset.id);
+						const modal = document.querySelector('#fg-confirm');
+						if (!ticket || !modal) return;
+						fg.pendingStatusTicketId = ticket.id;
+						fg.pendingStatusAction = statusButton.dataset.action || 'mark';
+						const rfc = $('fg-cfdi-rfc');
+						// El marcado manual no debe asumir Público en general: si se deja
+						// vacío o se escribe "Facturado", se guarda el estado sin token.
+						if (rfc) rfc.value = ticket.receptor || '';
+						setText('fg-m-count', 1);
+						setText('fg-m-total', money(ticket.total));
+						autofactura.fg.updateConfirmationMode();
+						if (modal.parentElement !== document.body) document.body.appendChild(modal);
+						bootstrap.Modal.getOrCreateInstance(modal).show();
+						return;
+					}
+					const button = event.target.closest?.(
+						'#fg-btn-select-visible, #fg-btn-select-all, #fg-btn-unselect-visible, #fg-btn-unselect-all, #fg-btn-clear, #fg-btn-invoice'
+					);
+					if (!button) return;
+					event.preventDefault();
+
+					switch (button.id) {
+						case 'fg-btn-select-visible':
+						for (const row of pageItems()) if (row.estado === 'No facturado') selected.add(row.id);
+							render();
+							break;
+						case 'fg-btn-select-all':
+							for (const row of filtered) if (row.estado === 'No facturado') selected.add(row.id);
+							render();
+							break;
+						case 'fg-btn-unselect-visible':
+							for (const row of pageItems()) selected.delete(row.id);
+							render();
+							break;
+						case 'fg-btn-unselect-all':
+							for (const row of filtered) selected.delete(row.id);
+							render();
+							break;
+						case 'fg-btn-clear':
+							autofactura.fg.clearSelection();
+							break;
+						case 'fg-btn-invoice': {
+							const modal = document.querySelector('#fg-confirm');
+							if (!modal || selected.size === 0) return;
+							fg.pendingStatusTicketId = null;
+							fg.pendingStatusAction = null;
+							autofactura.fg.updateConfirmationMode();
+							if (modal.parentElement !== document.body) document.body.appendChild(modal);
+							bootstrap.Modal.getOrCreateInstance(modal).show();
+							break;
+						}
+					}
+				});
 			}
 
 			function bind() {
-				for (let element of document.querySelectorAll('#factura-global header input')) {
-					element.addEventListener('change', () => applyFilters())
-				}
-				$('fg-btn-apply').addEventListener('click', () => { showLoader(true); setTimeout(() => { applyFilters(); showLoader(false); }, 150); });
-				$('fg-btn-reset').addEventListener('click', () => {
-					['fg-f-start', 'fg-f-end', 'fg-f-folio', 'fg-f-sucursal', 'fg-f-forma-pago', 'fg-f-min', 'fg-f-max'].forEach(id => $(id).value = '');
-					applyFilters();
-				});
-				$('fg-btn-prev').addEventListener('click', () => { if (pageIndex > 0) { pageIndex--; render(); } });
-				$('fg-btn-next').addEventListener('click', () => {
-					const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-					if (pageIndex < totalPages - 1) { pageIndex++; render(); }
-				});
-				$('fg-btn-select-visible').addEventListener('click', () => { for (const r of pageItems()) selected.add(r.id); render(); });
-				$('fg-btn-select-all').addEventListener('click', () => { for (const r of filtered) selected.add(r.id); render(); });
-				$('fg-btn-unselect-visible').addEventListener('click', () => { for (const r of pageItems()) selected.delete(r.id); render(); });
-				$('fg-btn-unselect-all').addEventListener('click', () => { for (const r of filtered) selected.delete(r.id); render(); });
-				$('fg-chk-all').addEventListener('change', (e) => {
-					if (e.target.checked) { for (const r of pageItems()) selected.add(r.id); }
-					else { for (const r of pageItems()) selected.delete(r.id); }
+				bindStableSelectionEvents();
+				bindStablePaginationEvents();
+				bindStableFilterEvents();
+				bindStableFooterEvents();
+				if (autofactura.fgBound) return;
+				autofactura.fgBound = true;
+				$('fg-tbody').addEventListener('click', (e) => {
+					const option = e.target.closest('[data-payment-option="true"]');
+					if (!option) return;
+					const paymentScope = option.scope;
+					const paymentValue = paymentScope?.value || option.querySelector('input')?.value || '';
+					const ticketRow = option.closest('tr');
+					const ticketScope = ticketRow?.scope;
+					if (!paymentValue || !ticketScope || typeof ticketScope.set !== 'function') return;
+					ticketScope.set('fp', paymentValue);
+					const ticket = allTickets.find(item => item.id == ticketRow.querySelector('.fg-row')?.dataset.id);
+					if (ticket) {
+						ticket.formaPago = paymentValue;
+						ticket.formasPago = ticket.formasPago?.length ? ticket.formasPago : [paymentValue];
+					}
 					render();
 				});
-				$('fg-tbody').addEventListener('change', (e) => {
-					if (!e.target.classList.contains('fg-row')) return;
-					const id = e.target.dataset.id;
-					e.target.checked ? selected.add(id) : selected.delete(id);
-					updateSummary(); updateButtons();
-					const rows = pageItems();
-					$('fg-chk-all').checked = rows.length > 0 && rows.every(r => selected.has(r.id));
-				});
-				$('fg-btn-clear').addEventListener('click', () => { selected.clear(); render(); });
-				$('fg-btn-invoice').addEventListener('click', () => {
-					new bootstrap.Modal('#fg-confirm').show();
-				});
-				$('fg-m-confirm').addEventListener('click', async () => {
-					//const payload = new File([JSON.stringify({
-					//	 ticketIds: Array.from(selected),
-					//	 cfdi: {
-					//			rfc: $('fg-cfdi-rfc').value.trim(),
-					//			uso: $('fg-cfdi-uso').value,
-					//			metodo: $('fg-cfdi-metodo').value,
-					//			forma: $('fg-cfdi-forma').value
-					//	 }
-					//})], "@xml", { type: "text/plain" });
-					const payload = xover.xml.createDocument(`<tickets>${[...selected].map(item => `<row id="${item}"/>`).join("")}</tickets>`);
-					for (let [attr, value] of Object.entries({
-						receptor: $('fg-cfdi-rfc').value.trim(),
-						//uso: $('fg-cfdi-uso').value,
-						//metodo: $('fg-cfdi-metodo').value,
-						//forma: $('fg-cfdi-forma').value,
-						conteo: $('fg-ticketcount').value,
-						subtotal: $('fg-sum-subtotal').value,
-						tasa: $('fg-tasa').value,
-						iva: $('fg-sum-iva').value,
-						total: $('fg-sum-total').value
-					})) {
-						payload.documentElement.setAttribute(attr, value)
-					}
-					showLoader(true);
-					try {
-						bootstrap.Modal.getInstance(document.querySelector('#fg-confirm')).hide();
-						let result = await xover.server.facturar(new File([payload], "@xml", { type: "text/xml" }));
-						let codigo = result.documentElement?.getAttribute('token');
-						if (!codigo) throw (new Error(`No se pudo completar la operación. Intente nuevamente en unos minutos.`))
-						for (const row of result.select(`tickets/row`)) {
-							const id = row.getAttribute("id");
-							const t = allTickets.find(x => x.id == id); if (t) t.estado = 'Facturado';
-						}
-						selected.clear(); applyFilters();
-						alert(`Puede continuar en el archivo de contpaq con el siguiente código: ${codigo}`);
-					} catch (err) {
-						if (instanceOf.call(err, Error)) return Promise.reject(err);
-						let message = instanceOf.call(err.document, Node) && err.document.single(`//xo:message`) || "Error al facturar. Revisa el endpoint.";
-						console.error(err);
-						alert(message.textContent || message);
-					} finally { showLoader(false); }
-				});
+			}
+
+			function updateStickyHeaderOffset() {
+				const toolbar = document.querySelector('#factura-global .toolbar');
+				document.querySelector('#factura-global')?.style.setProperty('--fg-toolbar-h', toolbar.offsetHeight + 'px');
+			}
+
+			function moveConfirmModalToBody() {
+				const modal = document.querySelector('#fg-confirm');
+				if (modal && modal.parentElement !== document.body) document.body.appendChild(modal);
+			}
+
+			Object.assign(fg, {
+				showLoader,
+				applyFilters,
+				buildInvoiceXml,
+				clearSelection: () => {
+					fg.selected.clear();
+					render();
+				},
+				getInvoiceContext: () => ({
+					selectedIds: [...selected],
+					selectedTickets: [...selected]
+						.map(id => allTickets.find(ticket => ticket.id == id))
+						.filter(Boolean),
+					filteredTickets: filtered,
+					allTickets,
+					totals: selectedTotals(),
+					receptor: document.getElementById('fg-cfdi-rfc')?.value?.trim() || ''
+				})
+			});
+			if (!fg.clearSelectionListenerBound) {
+				xo.listener.on(`click::#fg-btn-clear`, () => fg.clearSelection());
+				fg.clearSelectionListenerBound = true;
 			}
 
 			// bootstrap del módulo
 			(async function init() {
 				showLoader(true);
-				await seed(); applyFilters(); bind();
-				// fija la altura de la toolbar para el sticky del thead
-				document.querySelector('#factura-global .toolbar').addEventListener('resize', () => {
-					const h = document.querySelector('#factura-global .toolbar').offsetHeight;
-					document.querySelector('#factura-global').style.setProperty('--fg-toolbar-h', h + 'px');
-				});
-				// valor inicial:
-				const h0 = document.querySelector('#factura-global .toolbar').offsetHeight;
-				document.querySelector('#factura-global').style.setProperty('--fg-toolbar-h', h0 + 'px');
+				await fgFiltersReady;
+				if (!document.getElementById('factura-global')) return;
+				moveConfirmModalToBody();
+				attachShellFooter();
+				attachHeaderPagination();
+				await seed(); populateBranchFilter(); populatePaymentFilter(); autofactura.restoreTicketFilters($('fg-sidebar'), 'fg'); applyFilters(); attachShellFooter(); attachHeaderPagination(); bind();
+				const toolbar = document.querySelector('#factura-global .toolbar');
+				if (window.ResizeObserver) new ResizeObserver(updateStickyHeaderOffset).observe(toolbar);
+				window.addEventListener('resize', updateStickyHeaderOffset);
+				updateStickyHeaderOffset();
 				showLoader(false);
 			})();
 		})();
-		document.addEventListener('click', async function (event) {
-			const input = event.target.closest('input[type="date"][data-open-calendar]');
-			if (!input) return;
-			event.preventDefault();
-			input.dispatch("openCalendar");
-		})
-
-		xo.listener.on(`openCalendar`, async function ({ event }) {
-			if ((event.srcEvent || event).ctrlKey && this.ownerElement) {
-				this.remove();
-				return;
-			}
-			let element = this.closest("*");
-			let container = element.closest("div");
-			let [start_date, end_date] = container.querySelectorAll("[type=date]").toArray();
-			function applyFilters(filters) {
-				if (!filters) filters = null;
-				let [from, to] = filters.split("~");
-				start_date.value = from;
-				end_date.value = to;
-				element.dispatchEvent(new Event('input', { bubbles: true }));
-				element.dispatchEvent(new Event('change', { bubbles: true }));
-
-			}
-			let prompt_text = `Filtrar por ${element.getAttribute("headerText") || element.getAttribute("Name") || "fecha"}`;
-			let modal = top.document.querySelector(`#calendarModal`);
-			let data_type = element.getAttribute("DataType") || element.getAttribute("Type");
-			let filters;
-			if (typeof (openCalendar) == 'function' && modal && ["datetime", "date"].includes(data_type)) {
-				let maxDate = 'today'
-				let defaultDate = [start_date.value, end_date.nodeType === Node.ELEMENT_NODE && end_date !== element ? end_date.value : ""];
-				const { from, to } = await openCalendar({ label: prompt_text, defaultDate, maxDate });
-				filters = from && to ? `${from}~${to}` : null;
-			} else {
-				filters = prompt(prompt_text);
-			}
-			if (filters == null || this.value == filters) return false;
-			applyFilters.call(this, filters);
-		})
 	</script>
 
 	<div class="modal fade" id="fg-confirm" tabindex="-1" aria-hidden="true">
@@ -478,8 +1307,8 @@
 							<div class="row g-3">
 								<div class="col-12">
 									<label class="form-label">RFC Receptor</label>
-									<input id="fg-cfdi-rfc" class="form-control" value="XAXX010101">
-									<div class="form-text">Público en general: XAXX010101</div>
+									<input id="fg-cfdi-rfc" class="form-control" value="XAXX010101000">
+									<div class="form-text">RFC con formato válido genera token. Otro texto solo guarda el estado.</div>
 								</div>
 								<!--<div class="col-12">
 									<label class="form-label">Uso CFDI</label>

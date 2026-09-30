@@ -42,17 +42,22 @@ formatDate = function (date) {
     return new Date((date instanceof Date) && date || Date.parse(`${date}T00:00:00`.replace(/(\d{4})-?(\d{2})-?(\d{2})T/, '$1-$2-$3T')))
 }
 
-xo.listener.on(['append::main > [xo-source][xo-stylesheet], body > [xo-source][xo-stylesheet]'], function ({ target }) {
-    const self = this;
-    let mutually_inclusive_selector = `slot,script,dialog,[role=alertdialog],[role=alert],[role=dialog],[role=status],[role=progressbar],[role=complementary]`
-    for (const node of [...target.children].filter(node =>
-        node !== this && node.nodeType === Node.ELEMENT_NODE
-        && node.matches(`[xo-source]`)
-        && !node.matches(mutually_inclusive_selector)
-        && !self.matches(mutually_inclusive_selector)
-    )) {
-        node.remove()
-    }
+xo.listener.on(['append::main > [xo-source][xo-store], body > [xo-source][xo-store]'], function ({ target }) {
+  const self = this;
+  let mutually_inclusive_selector = `slot,script,dialog,[role=alertdialog],[role=alert],[role=dialog],[role=status],[role=progressbar],[role=complementary]`
+  for (const node of [...target.children].filter(node =>
+    node !== this && node.nodeType === Node.ELEMENT_NODE
+    && node.matches(`[xo-store]`)
+    && !node.matches(mutually_inclusive_selector)
+    && !self.matches(mutually_inclusive_selector)
+  )) {
+    node.remove()
+  }
+})
+
+xo.listener.on(['append::[id]'], function ({ target }) {
+  if (!(target && typeof (target.checkVisibility) === 'function' && target.checkVisibility())) return;
+  target.parentNode.querySelectorAll(`[id="${this.id}"]`).filter(el => el !== this).forEach(el => el.remove())
 })
 /*
 xo.listener.on(['append::html:*[.//@style[contains(.,"view-transition-name")]]'], function ({ target, element }) {
@@ -90,26 +95,6 @@ xo.listener.on(['beforeFetch::?FROM=^PanaxBI.#server:request'], async function (
     }
     trackers.clear();
     trackers.add(document.body.appendChild(document.createElement("px-loader")));
-})
-
-xover.listener.on('Response:failure?status=401', function ({ url }) {
-    if (['server.panax.io', location.host].includes(url.host)) {
-        xo.session.status = 'unauthorized'
-    }
-})
-
-Object.defineProperty(xo.session, 'logout', {
-    value: async function () {
-        try {
-            let response = await xover.server.logout();
-            for (store in xo.stores) {
-                xo.stores[store].remove()
-            }
-            xover.session.status = 'unauthorized';
-        } catch (e) {
-            Promise.reject(e);
-        }
-    }, writable: true, configurable: true
 })
 
 xo.listener.on('beforeRender?!store.stylesheets.length::model[not(//processing-instruction())]', function ({ document, store }) {

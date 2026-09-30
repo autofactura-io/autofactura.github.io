@@ -1,0 +1,511 @@
+<section id="concentrador" is="excel-selection" cell-selector="td:not(.rc-message)" class="container-fluid py-3">
+  <style>
+    #concentrador { --rc-line: #dce4ed; color: #203044; }
+    #concentrador .rc-header { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; }
+    #concentrador .rc-header h1 { margin: 0; font-size: 1.35rem; }
+    #concentrador .rc-filters { display: flex; flex-wrap: wrap; gap: .7rem; align-items: end; margin-left: auto; }
+    #concentrador .rc-filters label { display: grid; gap: .2rem; font-size: .78rem; font-weight: 600; }
+    #concentrador .rc-filters input, #concentrador .rc-filters select { min-height: 2.1rem; font-weight: normal; }
+    #concentrador .rc-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+    #concentrador .rc-card { border: 1px solid var(--rc-line); border-radius: .6rem; padding: .7rem .85rem; background: #fff; }
+    #concentrador .rc-card small { display: block; color: #637388; }
+    #concentrador .rc-card strong { font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+    #concentrador .rc-panel { border: 1px solid var(--rc-line); border-radius: .6rem; background: #fff; margin-bottom: 1rem; overflow: hidden; }
+    #concentrador .rc-panel[hidden] { display: none; }
+    #concentrador .rc-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; border-bottom: 1px solid var(--rc-line); }
+    #concentrador .rc-tabs button { border: 0; border-radius: .45rem .45rem 0 0; padding: .55rem .9rem; background: transparent; color: #43556a; }
+    #concentrador .rc-tabs button[aria-selected="true"] { background: #eaf5f0; color: #174f3a; box-shadow: inset 0 -3px #2f8a60; font-weight: 700; }
+    #concentrador[data-view="daily"] .rc-product-metric { display: none; }
+    #concentrador[data-view="folios"] .rc-filters { display: none; }
+    #concentrador .rc-report-layout { display: block; }
+    #concentrador .rc-report-main { min-width: 0; }
+    #concentrador .rc-folio-main { min-width: 0; padding: 1rem; }
+    #concentrador .rc-folio-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .6rem; margin-bottom: .6rem; }
+    #concentrador .rc-folios th { background: #fff5ca; }
+    #concentrador .rc-folios th:nth-child(-n+7), #concentrador .rc-folios td:nth-child(-n+7) { background: #f3f8fd; }
+    #concentrador .rc-folios th:first-child, #concentrador .rc-folios td:first-child { position: sticky; left: 0; z-index: 1; }
+    #concentrador .rc-folios th:first-child { z-index: 3; }
+    #concentrador .rc-panel-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem; padding: .8rem 1rem; border-bottom: 1px solid var(--rc-line); }
+    #concentrador .rc-panel-heading h2 { font-size: 1rem; margin: 0; }
+    #concentrador .rc-panel-heading small { color: #637388; }
+    #concentrador .rc-table-wrap { overflow: auto; max-height: min(62vh, 760px); scrollbar-gutter: stable; }
+    #concentrador table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
+    #concentrador th, #concentrador td { padding: .42rem .55rem; border-bottom: 1px solid var(--rc-line); white-space: nowrap; }
+    #concentrador th { position: sticky; top: 0; z-index: 2; background: #eaf5f0; font-weight: 650; }
+    #concentrador .rc-detail th { background: #fff5ca; }
+    #concentrador .rc-pivot th { background: #fff5ca; }
+    #concentrador .rc-pivot th:first-child, #concentrador .rc-pivot td:first-child { position: sticky; left: 0; z-index: 1; background: #fff; min-width: 13rem; }
+    #concentrador .rc-pivot th:first-child { z-index: 3; background: #fff5ca; }
+    #concentrador .rc-detail th:nth-child(-n+9), #concentrador .rc-detail td:nth-child(-n+9) { background: #f3f8fd; }
+    #concentrador .rc-detail th:first-child, #concentrador .rc-detail td:first-child { position: sticky; left: 0; z-index: 1; }
+    #concentrador .rc-detail th:first-child { z-index: 3; }
+    #concentrador tbody tr:hover td { filter: brightness(.97); }
+    #concentrador .rc-table-wrap td:not(.rc-message) { user-select: none; -webkit-user-select: none; }
+    #concentrador .rc-number { text-align: right; font-variant-numeric: tabular-nums; }
+    #concentrador tfoot td { position: sticky; bottom: 0; background: #dceafb !important; font-weight: 700; }
+    #concentrador .rc-muted { color: #657386; }
+    #concentrador .rc-message { padding: 2rem; text-align: center; color: #637388; }
+    #concentrador .rc-note { font-size: .8rem; color: #5c6978; margin-top: -.3rem; }
+  </style>
+
+  <div class="rc-header">
+    <div class="rc-filters">
+      <label class="rc-product-metric">Producto
+        <select id="rc-metric" class="form-select form-select-sm">
+          <option value="amount">Importe</option><option value="lines">Renglones</option>
+        </select>
+      </label>
+      <button id="rc-refresh" type="button" class="btn btn-outline-secondary btn-sm">Actualizar</button>
+      <button id="rc-export" type="button" class="btn btn-primary btn-sm" disabled>Descargar CSV</button>
+    </div>
+  </div>
+
+  <nav class="rc-tabs" role="tablist" aria-label="Reportes del concentrador">
+    <button type="button" role="tab" id="rc-tab-pivot" aria-selected="true" aria-controls="rc-panel-pivot" data-report="pivot">Productos por fecha</button>
+    <button type="button" role="tab" id="rc-tab-daily" aria-selected="false" aria-controls="rc-panel-daily" data-report="daily">Resumen diario</button>
+    <button type="button" role="tab" id="rc-tab-detail" aria-selected="false" aria-controls="rc-panel-detail" data-report="detail">Detalle por día</button>
+    <button type="button" role="tab" id="rc-tab-folios" aria-selected="false" aria-controls="rc-panel-folios" data-report="folios">Folios</button>
+  </nav>
+  <div class="rc-report-layout">
+    <span class="rc-filter-anchor" hidden></span>
+    <div class="rc-report-main">
+  <p id="rc-status-message" class="rc-muted small" role="status" hidden></p>
+  <div class="rc-panel" id="rc-panel-pivot" role="tabpanel" aria-labelledby="rc-tab-pivot">
+    <div class="rc-panel-heading"><h2>Tabla pivote de productos por fecha</h2><small id="rc-pivot-note">Una columna por día y una fila por producto.</small></div>
+    <div class="rc-table-wrap"><table id="rc-pivot" class="rc-pivot"></table></div>
+  </div>
+  <div class="rc-panel" id="rc-panel-daily" role="tabpanel" aria-labelledby="rc-tab-daily" hidden>
+    <div class="rc-panel-heading"><h2>Resumen diario por forma de pago</h2><small>Los pagos mixtos se distribuyen según su desglose.</small></div>
+    <div class="rc-cards p-3 mb-0" id="rc-cards" aria-live="polite"></div>
+    <div class="rc-table-wrap"><table id="rc-daily"></table></div>
+  </div>
+  <div class="rc-panel" id="rc-panel-detail" role="tabpanel" aria-labelledby="rc-tab-detail" hidden>
+    <div class="rc-panel-heading"><h2>Detalle diario de productos</h2><small id="rc-detail-note"></small></div>
+    <p id="rc-detail-empty-products" class="rc-muted small px-3 pt-3 mb-0" hidden>La fuente de facturas no entregó renglones de producto para estos tickets.</p>
+    <div class="rc-table-wrap"><table id="rc-detail" class="rc-detail"></table></div>
+  </div>
+  <div class="rc-panel" id="rc-panel-folios" role="tabpanel" aria-labelledby="rc-tab-folios" hidden>
+    <div class="rc-panel-heading"><h2>Detalle por folio</h2><small id="rc-folio-heading">50 folios por página</small></div>
+      <div class="rc-folio-main">
+        <div class="rc-folio-toolbar"><small id="rc-f-page-info" class="rc-muted"></small><div class="d-flex gap-2"><button id="rc-f-export" type="button" class="btn btn-primary btn-sm" disabled>Descargar CSV</button><button id="rc-f-prev" type="button" class="btn btn-outline-secondary btn-sm">Anterior</button><button id="rc-f-next" type="button" class="btn btn-outline-secondary btn-sm">Siguiente</button></div></div>
+        <div class="rc-table-wrap"><table id="rc-folios" class="rc-folios"></table></div>
+      </div>
+  </div>
+    </div>
+  </div>
+  <script>
+    (async function () {
+      const root = document.getElementById('concentrador');
+      const filterAside = await autofactura.mountTicketFilters(root.querySelector('.rc-filter-anchor'), {
+        prefix: 'rc', applyId: 'rc-f-apply', resetId: 'rc-f-reset',
+        helpText: 'El total conserva el importe del ticket completo.'
+      });
+      if (!filterAside) return;
+      const $ = id => root.querySelector('#' + id) || filterAside.querySelector('#' + id);
+      const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+      const num = value => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
+      const cents = value => Math.round((num(value) + Number.EPSILON) * 100);
+      const money = value => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value / 100);
+      const count = value => new Intl.NumberFormat('es-MX').format(value);
+      const sourceRows = model => [...(model.select('model/row') || [])];
+      let tickets = [];
+      let current = [];
+      let products = [];
+      let daily = [];
+      let pivotRows = [];
+      let folioFiltered = [];
+      let folioProducts = [];
+      let folioPage = 0;
+      const FOLIO_PAGE_SIZE = 100;
+      let activeView = 'pivot';
+      let viewportFrame = 0;
+      let viewportCleanup = () => {};
+
+      function activeTableWrap() {
+        return root.querySelector('#rc-panel-' + activeView + ' .rc-table-wrap');
+      }
+      function updateTableViewport() {
+        viewportFrame = 0;
+        if (!root.isConnected) { viewportCleanup(); return; }
+        const wrap = activeTableWrap();
+        if (!wrap) return;
+        const main = root.closest('main');
+        const bottom = Math.min(window.innerHeight, main?.getBoundingClientRect().bottom ?? window.innerHeight);
+        const available = Math.max(160, Math.floor(bottom - wrap.getBoundingClientRect().top - 24));
+        wrap.style.maxHeight = available + 'px';
+      }
+      function scheduleTableViewport() {
+        if (!viewportFrame) viewportFrame = requestAnimationFrame(updateTableViewport);
+      }
+      function setupTableViewport() {
+        globalThis.autofactura = globalThis.autofactura || {};
+        globalThis.autofactura.concentradorScrollCleanup?.();
+        globalThis.autofactura.concentradorViewportCleanup?.();
+        const controller = new AbortController();
+        const observer = window.ResizeObserver ? new ResizeObserver(scheduleTableViewport) : null;
+        observer?.observe(root.closest('main') || document.documentElement);
+        document.addEventListener('scroll', scheduleTableViewport, { capture: true, signal: controller.signal });
+        window.addEventListener('resize', scheduleTableViewport, { signal: controller.signal });
+        viewportCleanup = () => {
+          controller.abort();
+          observer?.disconnect();
+          if (viewportFrame) cancelAnimationFrame(viewportFrame);
+          viewportFrame = 0;
+        };
+        globalThis.autofactura.concentradorViewportCleanup = viewportCleanup;
+        scheduleTableViewport();
+      }
+
+      function dateKey(value) {
+        const raw = String(value || '');
+        if (/^\d{8}$/.test(raw)) return raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6, 8);
+        if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw.slice(6) + '-' + raw.slice(3, 5) + '-' + raw.slice(0, 2);
+        return '';
+      }
+      function paymentGroup(label) {
+        const name = String(label || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (/efec|cash|^01$/.test(name)) return 'Efectivo';
+        if (/tarj|credit|debit|visa|master|amex|^tc$|^td$|^t\.c\.$|^t\.d\.$|^0[4-6]$|^28$|^29$/.test(name)) return 'Tarjetas';
+        return 'Otros';
+      }
+      function parseTicket(row) {
+        const itemNodes = row.select('items/item');
+        const items = [...(itemNodes.length ? itemNodes : row.select('item'))].map(item => ({
+          key: (item.getAttribute('codigo') || '').trim() || (item.getAttribute('descripcion') || '').trim() || 'Sin descripción',
+          code: (item.getAttribute('codigo') || '').trim(),
+          description: (item.getAttribute('descripcion') || '').trim(),
+          name: (item.getAttribute('descripcion') || '').trim() || (item.getAttribute('codigo') || '').trim() || 'Sin descripción',
+          amount: cents(item.getAttribute('importe')) + cents(item.getAttribute('iva')) + cents(item.getAttribute('ieps'))
+        }));
+        const subtotal = cents(row.getAttribute('st'));
+        const iva = cents(row.getAttribute('iva'));
+        const ieps = cents(row.getAttribute('ieps'));
+        const totalAttr = row.getAttribute('t') ?? row.getAttribute('total');
+        const total = totalAttr === null ? subtotal + iva + ieps : cents(totalAttr);
+        const paymentNodes = row.select('payments/payment');
+        const paymentRows = paymentNodes.length ? paymentNodes : row.select('payments/pago');
+        const allPayments = [...paymentRows].map(payment => ({
+          form: payment.getAttribute('forma_pago') || payment.getAttribute('fp') || '',
+          amount: cents(payment.getAttribute('monto'))
+        })).filter(payment => payment.form);
+        const payments = allPayments.filter(payment => payment.amount > 0);
+        const form = row.getAttribute('fp') || '';
+        const forms = [...new Set(allPayments.map(payment => payment.form))];
+        if (!forms.length && form) forms.push(form);
+        return {
+          id: row.getAttribute('id') || '', date: dateKey(row.getAttribute('dt')),
+          folio: row.getAttribute('tkt') || '', branch: row.getAttribute('suc') || '',
+          form, forms, paymentsDetailed: paymentRows.length > 0, receptor: row.getAttribute('receptor') || '',
+          status: row.getAttribute('receptor') ? 'Facturado' : 'No facturado',
+          subtotal, iva, ieps, total, items, payments
+        };
+      }
+      function splitPayments(ticket) {
+        const amounts = { Efectivo: 0, Tarjetas: 0, Otros: 0 };
+        if (!ticket.payments.length) {
+          amounts[paymentGroup(ticket.form)] = ticket.total;
+          return amounts;
+        }
+        for (const payment of ticket.payments) amounts[paymentGroup(payment.form)] += payment.amount;
+        const difference = ticket.total - Object.values(amounts).reduce((sum, value) => sum + value, 0);
+        if (difference) amounts.Otros += difference;
+        return amounts;
+      }
+      function aggregate(rows) {
+        const byDate = new Map();
+        for (const ticket of rows) {
+          const day = byDate.get(ticket.date) || { date: ticket.date, count: 0, subtotal: 0, iva: 0, ieps: 0, total: 0, Efectivo: 0, Tarjetas: 0, Otros: 0, products: new Map() };
+          day.count++;
+          for (const key of ['subtotal', 'iva', 'ieps', 'total']) day[key] += ticket[key];
+          const payments = splitPayments(ticket);
+          for (const key of ['Efectivo', 'Tarjetas', 'Otros']) day[key] += payments[key];
+          for (const item of matchingFolioItems(ticket)) {
+            const product = day.products.get(item.key) || { amount: 0, lines: 0 };
+            product.amount += item.amount;
+            product.lines++;
+            day.products.set(item.key, product);
+          }
+          byDate.set(ticket.date, day);
+        }
+        return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+      }
+      function totals(rows) {
+        return rows.reduce((sum, row) => {
+          sum.count += row.count || 1;
+          for (const key of ['subtotal', 'iva', 'ieps', 'total', 'Efectivo', 'Tarjetas', 'Otros']) sum[key] += row[key] || 0;
+          return sum;
+        }, { count: 0, subtotal: 0, iva: 0, ieps: 0, total: 0, Efectivo: 0, Tarjetas: 0, Otros: 0 });
+      }
+      function cells(row) {
+        return ['count', 'Efectivo', 'Tarjetas', 'Otros', 'subtotal', 'iva', 'ieps', 'total']
+          .map(key => '<td class="rc-number">' + (key === 'count' ? count(row[key]) : money(row[key])) + '</td>').join('');
+      }
+      function renderDaily() {
+        const total = totals(daily);
+        $('rc-daily').innerHTML = '<thead><tr><th>Fecha</th><th class="rc-number">Tickets</th><th class="rc-number">Efectivo</th><th class="rc-number">Tarjetas</th><th class="rc-number">Otros / ajuste</th><th class="rc-number">Subtotal</th><th class="rc-number">IVA</th><th class="rc-number">IEPS</th><th class="rc-number">Total</th></tr></thead><tbody>' +
+          (daily.length ? daily.map(day => '<tr><td>' + esc(day.date) + '</td>' + cells(day) + '</tr>').join('') : '<tr><td colspan="9" class="rc-message">No hay tickets para estos filtros.</td></tr>') +
+          '</tbody><tfoot><tr><td>Total</td>' + cells(total) + '</tr></tfoot>';
+        const facturados = current.filter(ticket => ticket.status === 'Facturado').length;
+        $('rc-cards').innerHTML = [
+          ['Tickets', count(current.length)], ['Facturados', count(facturados)],
+          ['Efectivo', money(total.Efectivo)], ['Tarjetas', money(total.Tarjetas)],
+          ['Otros / ajuste', money(total.Otros)], ['Total', money(total.total)]
+        ].map(card => '<div class="rc-card"><small>' + card[0] + '</small><strong>' + card[1] + '</strong></div>').join('');
+      }
+      function renderPivot() {
+        const metric = $('rc-metric')?.value || 'amount';
+        const dates = daily.map(day => day.date);
+        const byProduct = new Map(products.map(product => [product.key, {
+          key: product.key, name: product.name, total: 0, dates: new Map()
+        }]));
+        for (const ticket of current) for (const item of matchingFolioItems(ticket)) {
+          const product = byProduct.get(item.key);
+          if (!product) continue;
+          const value = metric === 'lines' ? 1 : item.amount;
+          product.total += value;
+          product.dates.set(ticket.date, (product.dates.get(ticket.date) || 0) + value);
+        }
+        pivotRows = [...byProduct.values()];
+        const show = value => metric === 'lines' ? count(value) : money(value);
+        const head = '<thead><tr><th>Producto</th>' + dates.map(date => '<th class="rc-number">' + esc(date) + '</th>').join('') + '<th class="rc-number">Total</th></tr></thead>';
+        const body = pivotRows.length
+          ? pivotRows.map(product => '<tr><td>' + esc(product.name) + '</td>' + dates.map(date => '<td class="rc-number">' + (product.dates.has(date) ? show(product.dates.get(date)) : '—') + '</td>').join('') + '<td class="rc-number fw-semibold">' + show(product.total) + '</td></tr>').join('')
+          : '<tr><td colspan="' + (dates.length + 2) + '" class="rc-message">' + (current.length ? 'La fuente de facturas no entregó renglones de producto. Se requiere que la vista autofactura.tickets incluya items/item para calcular esta tabla.' : 'No hay tickets para estos filtros.') + '</td></tr>';
+        const foot = pivotRows.length ? '<tfoot><tr><td>Total</td>' + dates.map(date => '<td class="rc-number">' + show(pivotRows.reduce((sum, product) => sum + (product.dates.get(date) || 0), 0)) + '</td>').join('') + '<td class="rc-number">' + show(pivotRows.reduce((sum, product) => sum + product.total, 0)) + '</td></tr></tfoot>' : '';
+        $('rc-pivot').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
+        $('rc-pivot-note').textContent = pivotRows.length + ' productos · ' + dates.length + ' fechas · ' + (metric === 'lines' ? 'renglones' : 'importe con impuestos');
+      }
+      function productValue(day, product, metric) {
+        return day.products.get(product.key)?.[metric === 'lines' ? 'lines' : 'amount'] || 0;
+      }
+      function renderDetail() {
+        const metric = $('rc-metric')?.value || 'amount';
+        const showProduct = value => metric === 'lines' ? count(value) : money(value);
+        const fixed = ['Fecha', 'Tickets', 'Efectivo', 'Tarjetas', 'Otros / ajuste', 'Subtotal', 'IVA', 'IEPS', 'Total'];
+        const headers = fixed.concat(products.map(product => product.name));
+        const head = '<thead><tr>' + headers.map((header, index) => '<th' + (index > 0 ? ' class="rc-number"' : '') + ' title="' + esc(header) + '">' + esc(header) + '</th>').join('') + '</tr></thead>';
+        const body = daily.map(day => '<tr><td>' + esc(day.date) + '</td>' + cells(day) +
+          products.map(product => { const value = productValue(day, product, metric); return '<td class="rc-number">' + (value ? showProduct(value) : '—') + '</td>'; }).join('') + '</tr>').join('');
+        const grand = totals(daily);
+        const foot = '<tfoot><tr><td>Total</td>' + cells(grand) +
+          products.map(product => { const value = daily.reduce((sum, day) => sum + productValue(day, product, metric), 0); return '<td class="rc-number">' + showProduct(value) + '</td>'; }).join('') + '</tr></tfoot>';
+        $('rc-detail').innerHTML = head + '<tbody>' + (body || '<tr><td colspan="' + headers.length + '" class="rc-message">No hay tickets para estos filtros.</td></tr>') + '</tbody>' + foot;
+        $('rc-detail-note').textContent = daily.length + ' fechas · ' + products.length + ' productos · ' + (metric === 'lines' ? 'número de renglones' : 'importe con impuestos');
+        $('rc-detail-empty-products').hidden = !current.length || products.length > 0;
+      }
+      function resetFolioFilters() {
+        for (const id of ['rc-f-start', 'rc-f-end', 'rc-f-folio', 'rc-f-sucursal', 'rc-f-formapago', 'rc-f-producto', 'rc-f-pago-unico', 'rc-f-impuestos']) $(id).value = '';
+        $('rc-f-incluir-productos').checked = false;
+        $('rc-f-estado').value = 'No facturado';
+        $('rc-f-min').value = '0.00';
+        $('rc-f-max').value = '9999.99';
+      }
+      function matchingFolioItems(ticket) {
+        const terms = autofactura.parseTicketFilterTerms($('rc-f-producto').value);
+        return terms.length && !$('rc-f-incluir-productos').checked
+          ? ticket.items.filter(item => productMatches(item, terms))
+          : ticket.items;
+      }
+      function productMatches(item, terms) {
+        const text = (item.code + ' ' + item.description).toLowerCase();
+        return terms.some(term => text.includes(term));
+      }
+      function applyFolioFilters(preservePage = false) {
+        autofactura.updateTicketFilterIndicators(filterAside, 'rc');
+        const start = $('rc-f-start').value;
+        const end = $('rc-f-end').value;
+        const folios = $('rc-f-folio').value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+        const branch = $('rc-f-sucursal').value.trim().toLowerCase();
+        const form = $('rc-f-formapago').value.trim().toLowerCase();
+        const productTerms = autofactura.parseTicketFilterTerms($('rc-f-producto').value);
+        const singlePayment = $('rc-f-pago-unico').value;
+        const taxes = $('rc-f-impuestos').value;
+        const status = $('rc-f-estado').value;
+        const min = parseFloat($('rc-f-min').value);
+        const max = parseFloat($('rc-f-max').value);
+        folioFiltered = tickets.filter(ticket => {
+          if (status && ticket.status !== status) return false;
+          if (start && ticket.date < start) return false;
+          if (end && ticket.date > end) return false;
+          if (!isNaN(min) && ticket.total / 100 < min) return false;
+          if (!isNaN(max) && ticket.total / 100 > max) return false;
+          if (folios.length && !folios.some(folio => ticket.folio.toLowerCase().includes(folio))) return false;
+          if (branch && !ticket.branch.toLowerCase().includes(branch)) return false;
+          if (form && !ticket.forms.some(value => value.toLowerCase() === form)) return false;
+          if (productTerms.length && !ticket.items.some(item => productMatches(item, productTerms))) return false;
+          if (singlePayment && (!ticket.paymentsDetailed || (singlePayment === '1' && ticket.forms.length !== 1) || (singlePayment === '0' && ticket.forms.length <= 1))) return false;
+          if (taxes === 'iva' && ticket.iva <= 0) return false;
+          if (taxes === 'ieps' && ticket.ieps <= 0) return false;
+          if (taxes === 'ambos' && (ticket.iva <= 0 || ticket.ieps <= 0)) return false;
+          if (taxes === 'ninguno' && (ticket.iva > 0 || ticket.ieps > 0)) return false;
+          return true;
+        }).sort((a, b) => a.date.localeCompare(b.date) || a.folio.localeCompare(b.folio, 'es', { numeric: true }));
+        const byProduct = new Map();
+        for (const ticket of folioFiltered) {
+          ticket.visibleProductAmounts = new Map();
+          for (const item of matchingFolioItems(ticket)) {
+            ticket.visibleProductAmounts.set(item.key, (ticket.visibleProductAmounts.get(item.key) || 0) + item.amount);
+            if (!byProduct.has(item.key)) byProduct.set(item.key, { key: item.key, name: item.name });
+          }
+        }
+        folioProducts = [...byProduct.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+        current = folioFiltered;
+        products = folioProducts;
+        daily = aggregate(current);
+        if (!preservePage) folioPage = 0;
+        renderActive();
+      }
+      function folioProductValue(ticket, product) {
+        return ticket.visibleProductAmounts?.get(product.key) || 0;
+      }
+      function renderFolios() {
+        clearCellSelection();
+        const totalPages = Math.max(1, Math.ceil(folioFiltered.length / FOLIO_PAGE_SIZE));
+        folioPage = Math.min(folioPage, totalPages - 1);
+        const pageRows = folioFiltered.slice(folioPage * FOLIO_PAGE_SIZE, (folioPage + 1) * FOLIO_PAGE_SIZE);
+        const headers = ['Fecha', 'Folio', 'Sucursal', 'Forma de pago', 'Estado', 'Receptor', 'Subtotal', 'IVA', 'IEPS', 'Total'];
+        const head = '<thead><tr>' + headers.concat(folioProducts.map(product => product.name)).map((title, index) => '<th' + (index >= 6 ? ' class="rc-number"' : '') + ' title="' + esc(title) + '">' + esc(title) + '</th>').join('') + '</tr></thead>';
+        const body = pageRows.map(ticket => '<tr>' +
+          [ticket.date, ticket.folio, ticket.branch, ticket.form || 'Sin dato', ticket.status, ticket.receptor || '—'].map(value => '<td>' + esc(value) + '</td>').join('') +
+          [ticket.subtotal, ticket.iva, ticket.ieps, ticket.total].map(value => '<td class="rc-number">' + money(value) + '</td>').join('') +
+          folioProducts.map(product => { const value = folioProductValue(ticket, product); return '<td class="rc-number">' + (value ? money(value) : '—') + '</td>'; }).join('') + '</tr>').join('');
+        const pageTotal = totals(pageRows);
+        const foot = '<tfoot><tr><td colspan="6">Total página</td>' +
+          [pageTotal.subtotal, pageTotal.iva, pageTotal.ieps, pageTotal.total].map(value => '<td class="rc-number">' + money(value) + '</td>').join('') +
+          folioProducts.map(product => '<td class="rc-number">' + money(pageRows.reduce((sum, ticket) => sum + folioProductValue(ticket, product), 0)) + '</td>').join('') + '</tr></tfoot>';
+        $('rc-folios').innerHTML = head + '<tbody>' + (body || '<tr><td colspan="' + (headers.length + folioProducts.length) + '" class="rc-message">No hay tickets para estos filtros.</td></tr>') + '</tbody>' + foot;
+        $('rc-f-page-info').textContent = 'Página ' + (folioPage + 1) + ' de ' + totalPages + ' — ' + folioFiltered.length + ' tickets';
+        $('rc-folio-heading').textContent = FOLIO_PAGE_SIZE + ' folios por página · ' + folioProducts.length + ' productos';
+        $('rc-f-prev').disabled = folioPage === 0;
+        $('rc-f-next').disabled = folioPage >= totalPages - 1;
+        $('rc-f-export').disabled = folioFiltered.length === 0;
+        scheduleTableViewport();
+      }
+      function clearCellSelection() {
+        if (!root.selection?.cells.size) return;
+        root.clearSelection();
+        root.emitSelectionChange();
+      }
+      function renderActive() {
+        clearCellSelection();
+        if (activeView === 'pivot') renderPivot();
+        else if (activeView === 'daily') renderDaily();
+        else if (activeView === 'detail') renderDetail();
+        else renderFolios();
+        const exportButton = $('rc-export');
+        if (exportButton) exportButton.disabled = activeView === 'pivot' ? !pivotRows.length : !current.length;
+        scheduleTableViewport();
+      }
+      function selectReport(view) {
+        if (!['pivot', 'daily', 'detail', 'folios'].includes(view)) return;
+        activeView = view;
+        root.dataset.view = view;
+        for (const button of root.querySelectorAll('[data-report]')) {
+          const selected = button.dataset.report === view;
+          button.setAttribute('aria-selected', String(selected));
+          $('rc-panel-' + button.dataset.report).hidden = !selected;
+        }
+        renderActive();
+      }
+      function csvCell(value) { return '"' + String(value ?? '').replaceAll('"', '""') + '"'; }
+      function downloadCsv(headers, rows, suffix, period = [$('rc-f-start').value || 'inicio', $('rc-f-end').value || 'fin'].join('_')) {
+        const csv = '\uFEFF' + [headers, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n');
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'concentrador-' + suffix + '-' + period + '.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      function exportDetail() {
+        const metric = $('rc-metric')?.value || 'amount';
+        const headers = ['Fecha', 'Tickets', 'Efectivo', 'Tarjetas', 'Otros / ajuste', 'Subtotal', 'IVA', 'IEPS', 'Total'].concat(products.map(product => product.name + (metric === 'lines' ? ' (renglones)' : ' (importe)')));
+        const rows = daily.map(day => [day.date, day.count, day.Efectivo / 100, day.Tarjetas / 100, day.Otros / 100,
+          day.subtotal / 100, day.iva / 100, day.ieps / 100, day.total / 100,
+          ...products.map(product => { const value = productValue(day, product, metric); return metric === 'lines' ? value : value / 100; })]);
+        downloadCsv(headers, rows, 'detalle-diario');
+      }
+      function exportDaily() {
+        const headers = ['Fecha', 'Tickets', 'Efectivo', 'Tarjetas', 'Otros / ajuste', 'Subtotal', 'IVA', 'IEPS', 'Total'];
+        const rows = daily.map(day => [day.date, day.count, day.Efectivo / 100, day.Tarjetas / 100, day.Otros / 100,
+          day.subtotal / 100, day.iva / 100, day.ieps / 100, day.total / 100]);
+        downloadCsv(headers, rows, 'diario');
+      }
+      function exportPivot() {
+        const metric = $('rc-metric')?.value || 'amount';
+        const dates = daily.map(day => day.date);
+        const convert = value => metric === 'lines' ? value : value / 100;
+        const rows = pivotRows.map(product => [product.name, ...dates.map(date => convert(product.dates.get(date) || 0)), convert(product.total)]);
+        downloadCsv(['Producto', ...dates, 'Total'], rows, 'productos');
+      }
+      function exportFolios() {
+        const headers = ['Fecha', 'Folio', 'Sucursal', 'Forma de pago', 'Estado', 'Receptor', 'Subtotal', 'IVA', 'IEPS', 'Total']
+          .concat(folioProducts.map(product => product.name + ' (importe)'));
+        const rows = folioFiltered.map(ticket => [ticket.date, ticket.folio, ticket.branch, ticket.form, ticket.status, ticket.receptor,
+          ticket.subtotal / 100, ticket.iva / 100, ticket.ieps / 100, ticket.total / 100,
+          ...folioProducts.map(product => folioProductValue(ticket, product) / 100)]);
+        downloadCsv(headers, rows, 'folios', [$('rc-f-start').value || 'inicio', $('rc-f-end').value || 'fin'].join('_'));
+      }
+      async function load() {
+        const refreshButton = $('rc-refresh');
+        if (refreshButton) refreshButton.disabled = true;
+        $('rc-status-message').textContent = 'Cargando facturas…';
+        $('rc-status-message').hidden = false;
+        try {
+          const model = await xo.stores['#facturas'].ready;
+          tickets = sourceRows(model).map(parseTicket).filter(ticket => ticket.date);
+          const branches = [...new Set(tickets.map(ticket => ticket.branch).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+          const folioBranch = $('rc-f-sucursal').value;
+          $('rc-f-sucursal').innerHTML = '<option value="">Todos</option>' + branches.map(branch => '<option value="' + esc(branch) + '">' + esc(branch) + '</option>').join('');
+          $('rc-f-sucursal').value = folioBranch;
+          const forms = [...new Set(tickets.flatMap(ticket => ticket.forms).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+          const folioForm = $('rc-f-formapago').value;
+          $('rc-f-formapago').innerHTML = '<option value="">Todos</option>' + forms.map(form => '<option value="' + esc(form) + '">' + esc(form) + '</option>').join('');
+          $('rc-f-formapago').value = folioForm;
+          autofactura.restoreTicketFilters(filterAside, 'rc');
+          applyFolioFilters();
+          $('rc-status-message').hidden = true;
+        } catch (error) {
+          console.error('No se pudo cargar el concentrador', error);
+          $('rc-status-message').textContent = 'No se pudieron cargar las facturas.';
+        } finally { if (refreshButton) refreshButton.disabled = false; }
+      }
+      root.addEventListener('change', event => {
+        if (event.target.matches('#rc-metric')) renderActive();
+      });
+      filterAside.addEventListener('change', event => applyFolioFilters(event.target.matches('#rc-f-incluir-productos')));
+      filterAside.addEventListener('input', () => autofactura.updateTicketFilterIndicators(filterAside, 'rc'));
+      filterAside.addEventListener('click', event => {
+        if (event.target.closest('#rc-f-apply')) { autofactura.captureTicketFilters(filterAside, 'rc'); applyFolioFilters(); }
+        if (event.target.closest('#rc-f-reset')) { resetFolioFilters(); autofactura.captureTicketFilters(filterAside, 'rc'); applyFolioFilters(); }
+      });
+      root.addEventListener('click', event => {
+        const tab = event.target.closest('[data-report]');
+        if (tab) selectReport(tab.dataset.report);
+        if (event.target.closest('#rc-export')) {
+          if (activeView === 'pivot') exportPivot();
+          else if (activeView === 'daily') exportDaily();
+          else exportDetail();
+        }
+        if (event.target.closest('#rc-f-prev') && folioPage > 0) { folioPage--; renderFolios(); }
+        if (event.target.closest('#rc-f-next') && folioPage < Math.ceil(folioFiltered.length / FOLIO_PAGE_SIZE) - 1) { folioPage++; renderFolios(); }
+        if (event.target.closest('#rc-f-export') && folioFiltered.length) exportFolios();
+        if (event.target.closest('#rc-refresh')) load();
+      });
+      root.dataset.view = activeView;
+      autofactura.updateTicketFilterIndicators(filterAside, 'rc');
+      setupTableViewport();
+      load();
+      Promise.resolve().then(async () => {
+        await widgetBehaviors.ready(root);
+        for (const summary of document.querySelectorAll('footer [is~="selection-summary"]')) {
+          await widgetBehaviors.ready(summary);
+          summary.bindSelectionSource?.();
+        }
+      }).catch(error => console.error('No se pudo inicializar la selección de celdas', error));
+    })();
+  </script>
+</section>

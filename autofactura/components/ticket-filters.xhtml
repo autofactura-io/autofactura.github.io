@@ -1,0 +1,50 @@
+<template>
+  <div class="offcanvas-header">
+    <h2 class="offcanvas-title h5" id="__PREFIX__-filter-title">Filtros <span id="__PREFIX__-active-filter-count" class="ticket-filter-active-indicator" hidden="hidden"><span aria-hidden="true">●</span><span id="__PREFIX__-active-filter-count-text"></span></span></h2>
+    <button type="button" class="btn-close" aria-label="Cerrar filtros"></button>
+  </div>
+  <div id="__PREFIX__-filter-panel" class="offcanvas-body">
+    <div class="row g-2">
+      <div class="col-12 ticket-filter-field" data-filter-key="date">
+        <label class="form-label mb-1" for="__PREFIX__-f-date-range">Búsqueda por fecha</label>
+        <button id="__PREFIX__-f-date-range" type="button" class="form-control form-control-sm ticket-date-range-trigger" aria-label="Elegir rango de fechas"><span data-date-range-label="">Selecciona el rango</span><span aria-hidden="true">▦</span></button>
+        <input id="__PREFIX__-f-start" type="hidden" value="" /><input id="__PREFIX__-f-end" type="hidden" value="" />
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="folio">
+        <label class="form-label mb-1" for="__PREFIX__-f-folio">Folio</label><input id="__PREFIX__-f-folio" type="search" class="form-control form-control-sm" placeholder="Ej. 1001, 1002, 1003" />
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="branch">
+        <label class="form-label mb-1" for="__PREFIX__-f-sucursal">Sucursal</label><select id="__PREFIX__-f-sucursal" class="form-select form-select-sm"><option value="">Todos</option></select>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="payment">
+        <label class="form-label mb-1" for="__PREFIX__-f-formapago">Forma de pago</label><select id="__PREFIX__-f-formapago" class="form-select form-select-sm"><option value="">Todos</option></select>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="amount">
+        <label class="form-label mb-1">Rango de montos</label><div class="d-flex gap-2"><input id="__PREFIX__-f-min" type="number" step="0.01" value="0.00" class="form-control form-control-sm" aria-label="Monto mínimo" /><input id="__PREFIX__-f-max" type="number" step="0.01" value="9999.99" class="form-control form-control-sm" aria-label="Monto máximo" /></div>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="product">
+        <label class="form-label mb-1" for="__PREFIX__-f-producto">Producto</label><input id="__PREFIX__-f-producto" type="search" class="form-control form-control-sm" placeholder="Códigos o descripciones, separados por comas" />
+        <div class="form-check mt-2"><input id="__PREFIX__-f-incluir-productos" type="checkbox" class="form-check-input" /><label class="form-check-label small" for="__PREFIX__-f-incluir-productos">Incluir todos los productos del ticket</label></div>
+        <div class="form-text" data-filter-help=""></div>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="single-payment">
+        <label class="form-label mb-1" for="__PREFIX__-f-pago-unico">Pagos del ticket</label><select id="__PREFIX__-f-pago-unico" class="form-select form-select-sm"><option value="">Todos</option><option value="1">Sólo una forma de pago</option><option value="0">Pago mixto</option></select>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="taxes">
+        <label class="form-label mb-1" for="__PREFIX__-f-impuestos">Impuestos</label><select id="__PREFIX__-f-impuestos" class="form-select form-select-sm"><option value="">Todos</option><option value="iva">Con IVA</option><option value="ieps">Con IEPS</option><option value="ambos">Con IVA e IEPS</option><option value="ninguno">Sin IVA ni IEPS</option></select>
+      </div>
+      <div class="col-12 ticket-filter-field" data-filter-key="status">
+        <label class="form-label mb-1" for="__PREFIX__-f-estado">Estado</label><select id="__PREFIX__-f-estado" class="form-select form-select-sm"><option value="No facturado" selected="selected">No facturado</option><option value="Facturado">Facturado</option><option value="">Todos</option></select>
+      </div>
+      <div class="col-12 d-flex gap-2"><button id="__APPLY_ID__" type="button" class="btn btn-outline-primary btn-sm w-100">Aplicar filtros</button><button id="__RESET_ID__" type="button" class="btn btn-outline-secondary btn-sm w-100">Limpiar</button></div>
+    </div>
+  </div>
+  <div id="calendarModal" data-calendar-modal="" class="ticket-calendar-modal" style="display:none">
+    <div class="ticket-calendar-content">
+      <label for="rangePicker">Filtrar por rango:</label>
+      <input id="rangePicker" class="form-control form-control-sm" placeholder="Selecciona el rango" />
+      <button type="button" id="btnCalendarClear" aria-label="Borrar selección" title="Borrar selección">🧹</button>
+      <button type="button" id="btnCalendarClose" aria-label="Cerrar calendario" title="Cerrar">✖</button>
+    </div>
+  </div>
+</template>

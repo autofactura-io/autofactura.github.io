@@ -7,7 +7,10 @@
 		"login": "POST ${xover.session.server}/login.asp",
 		"logout": "${xover.session.server}/logout.asp",
 		"facturar": {
-			"POST server:request": { "FROM": "autofactura.actualizarTicketsXFacturar" }
+			"POST server:request": {
+				"FROM": "autofactura.actualizarTicketsXFacturar",
+				"^x-payload-parameter-name": "@xml"
+			}
 		}
 	},
 	"session": {
@@ -20,9 +23,9 @@
 			}
 		},
 		"#": "#shell",
-		"#shell": null,
-		"#login": null,
-		"#loading": null,
+		"#shell": true,
+		"#login": true,
+		"#loading": true,
 		"#settings": "settings.xml",
 		"px-daterange": "widgets/daterange.xhtml",
 		"px-combobox": "widgets/combobox.xhtml",
@@ -32,11 +35,21 @@
 		"#menu": "menus.xml",
 		"#globalization": [ "assets/globalization/headerText.${xo.session.locale.split('-').shift()}.resx", "assets/globalization/headerText.resx" ],
 		"#sitemap": "sitemap.xml",
+		"/widgets/page_navbar.xslt": "/page_navbar.xslt",
+		"/widgets/sitemap.xslt": "/sitemap.xslt",
 		"#factura_global": "factura_global_scoped.html",
+		"#impuestos": "impuestos_scoped.html",
+		"#concentrador": "concentrador_scoped.html",
 		"#facturas": {
 			"server:request": {
 				"FROM": "autofactura.tickets",
 				"^X-ORDER-BY": "[@tkt]"
+			}
+		},
+		"#tax_rules": {
+			"server:request": {
+				"FROM": "autofactura.product_tax_rules",
+				"^X-ORDER-BY": "product_description"
 			}
 		},
 		"#ws": {
@@ -59,6 +72,7 @@
 		"px-to-excel",
 		"px-loader",
 		"#facturas",
+		"#tax_rules",
 		{ "updateTunnel": [] }
 
 	],
@@ -71,7 +85,17 @@
 			}
 		},
 		"#factura_global": { "target": "@#shell main" },
+		"#impuestos": { "target": "@#shell main" },
+		"#concentrador": { "target": "@#shell main" },
 		"#facturas": {
+			"headers": {
+				"x-root-node": "model",
+				"x-row-node": "row",
+				"x-xml-mode": "PATH",
+				"x-page-size": "10000"
+			}
+		},
+		"#tax_rules": {
 			"headers": {
 				"x-root-node": "model",
 				"x-row-node": "row",
@@ -81,13 +105,12 @@
 		},
 		"~.asp": {
 			"headers": {
+				"x-referer-id": "${xover.session.referer_id}",
 				"authorization": "${xover.session.id_token}"
 			}
 		},
-		"server:facturar": {
-			"headers": {
-				"x-payload-parameter-name": "@xml"
-			}
+		"server:request": {
+			"authentication": "#login"
 		},
 		"#shell": {
 			"hash": ""

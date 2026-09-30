@@ -2,5 +2,7 @@
 	<item id="1" title="Autofactura">
 		<!--<item id="2" title="$$ de ventas x tipo de pago" target="#ventas_tipo_pago"/>-->
 		<item id="3" title="Factura Global" target="#factura_global"/>
+		<item id="4" title="Catálogo de impuestos" target="#impuestos"/>
+		<item id="5" title="Reporte concentrador" target="#concentrador"/>
 	</item>
 </sitemap>

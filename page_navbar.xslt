@@ -15,7 +15,7 @@ xmlns:combobox="http://panax.io/widget/combobox"
 >
 	<xsl:import href="headers.xslt"/>
 	<xsl:import href="common.xslt"/>
-	<xsl:import href="widgets/page_navbar.xslt"/>
+	<xsl:import href="~/widgets/page_navbar.xslt"/>
 	<xsl:import href="widgets/combobox.xslt"/>
 
 	<xsl:template mode="widget" match="@*|*"/>

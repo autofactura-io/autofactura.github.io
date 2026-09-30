@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = `${location.hostname}_260225_0049`,
+﻿const CACHE_NAME = `${location.hostname}_260930_1050`,
     urlsToCache = [
         './'
         , './register-pwa.js'
@@ -86,6 +86,9 @@ self.addEventListener('fetch', e => {
                         }
                         return response;
                     });
+                }).catch(error => {
+                    if (response) return response;
+                    throw error;
                 });
             })
     )
