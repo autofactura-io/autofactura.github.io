@@ -23,7 +23,7 @@
 			}
 		},
 		"#": "#shell",
-		"#shell": true,
+		"#shell": "shell.xml",
 		"#login": "login.xml",
 		"#loading": true,
 		"#settings": "settings.xml",
