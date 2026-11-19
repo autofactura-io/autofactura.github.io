@@ -30,6 +30,7 @@
 		"px-daterange": "autofactura/components/daterange.xhtml?v=20261119.3",
 		"px-combobox": "widgets/combobox.xhtml",
 		"px-printer": "widgets/printer.xhtml",
+		"px-to-excel": "widgets/excel_button.xhtml",
 		"px-loader": "widgets/loader.xhtml",
 		"google-chart": "widgets/google-chart.xhtml",
 		"#menu": "menus.xml",
@@ -70,7 +71,6 @@
 	},
 	"start": [
 		"loading.xslt",
-		"#ws",
 		"px-combobox",
 		"px-daterange",
 		"px-printer",
