@@ -250,20 +250,20 @@ h3, h4 {
 :root {
    /* === Paleta Autofactura === */
    --bg-primary: hsla(188, 55%, 31%, 1); /* Azul verdoso principal (#20787A aprox.) */
-   --bg-primary-ps: hsla(188, 55%, 26%, 1) !important; /* Hover / énfasis más oscuro */
+   --bg-primary-ps: hsla(188, 55%, 26%, 1) !important; /* Hover / ï¿½nfasis mï¿½s oscuro */
    --bg-primary-sbg: hsla(188, 55%, 90%, 0.9) !important; /* Fondo suave */
    --bg-primary-second: linear-gradient(-45deg, hsl(188,55%,31%) 0%, hsl(188,55%,25%) 100%);
-   /* Colores básicos */
+   /* Colores bï¿½sicos */
    --bg-white: #ffffff;
    --bg-black: #000000;
    --bg-green: #4caf50; /* verde balanceado */
-   --bg-yellow: #f4af68; /* dorado cálido del encabezado */
+   --bg-yellow: #f4af68; /* dorado cï¿½lido del encabezado */
    --bg-red: #dc3545;
    --bg-blue: #20787a; /* consistente con el logotipo */
    --bg-fucsia: #ff00dc;
    --bg-gray: #6c757d;
    /* Fondo general */
-   --bg-body: #f5f9fa; /* más claro y frío que el anterior */
+   --bg-body: #f5f9fa; /* mï¿½s claro y frï¿½o que el anterior */
    --bg-body-color: #37474f;
    --bg-wrapper: #f5f9fa;
    /* Texto */
@@ -2907,3 +2907,43 @@ a.dropdown-item.item_category:hover {
 }
 
 /*---------------------------------------*/
+
+/* Menu button over the page header and the expanded sidebar. */
+#shell nav.navbar button.menu_toggle {
+   display: inline-grid;
+   place-items: center;
+   flex: 0 0 2.625rem;
+   width: 2.625rem;
+   height: 2.625rem;
+   padding: 0;
+   border: 1px solid transparent;
+   border-radius: .375rem;
+   background-color: transparent;
+   color: #263b4e;
+   line-height: 1;
+   cursor: pointer;
+}
+
+#shell nav.navbar button.menu_toggle:hover {
+   background-color: #e6edf3;
+}
+
+#shell nav.navbar button.menu_toggle[aria-expanded="true"] {
+   color: #fff;
+   border-color: rgba(255, 255, 255, .3);
+}
+
+#shell nav.navbar button.menu_toggle[aria-expanded="true"]:hover {
+   background-color: rgba(255, 255, 255, .12);
+}
+
+#shell nav.navbar button.menu_toggle:focus-visible {
+   outline: 2px solid currentColor;
+   outline-offset: 2px;
+}
+
+#shell nav.navbar button.menu_toggle:disabled,
+#shell nav.navbar button.menu_toggle[aria-disabled="true"] {
+   cursor: wait;
+   opacity: .55;
+}

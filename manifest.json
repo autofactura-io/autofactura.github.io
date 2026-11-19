@@ -24,7 +24,7 @@
 		},
 		"#": "#shell",
 		"#shell": true,
-		"#login": true,
+		"#login": "login.xml",
 		"#loading": true,
 		"#settings": "settings.xml",
 		"px-daterange": "widgets/daterange.xhtml",
@@ -40,6 +40,11 @@
 		"#factura_global": "factura_global_scoped.html",
 		"#impuestos": "impuestos_scoped.html",
 		"#concentrador": "concentrador_scoped.html",
+		"#resumen_descarga_cfdi": {
+			"server:request": { "FROM": "[DescargaMasiva].[reporteDescargaCFDI]" }
+		},
+		"excel-selection": "widgets/excel-selection.xhtml",
+		"value-filter": "widgets/value-filter.xhtml",
 		"#facturas": {
 			"server:request": {
 				"FROM": "autofactura.tickets",
@@ -71,8 +76,6 @@
 		"px-printer",
 		"px-to-excel",
 		"px-loader",
-		"#facturas",
-		"#tax_rules",
 		{ "updateTunnel": [] }
 
 	],
@@ -87,6 +90,14 @@
 		"#factura_global": { "target": "@#shell main" },
 		"#impuestos": { "target": "@#shell main" },
 		"#concentrador": { "target": "@#shell main" },
+		"#resumen_descarga_cfdi": {
+			"cache": "no-store",
+			"headers": { "Accept": "application/xml, text/xml" },
+			"stylesheets": [{ "href": "reportes/resumen_descarga_CFDI.xslt", "target": "@#shell main" }],
+			"expiry": 1
+		},
+		"#server:login": { "resumable": false, "rejectCodes": 400, "authentication": false, "cache": "no-store" },
+		"#server:logout": { "resumable": false, "authentication": false, "cache": "no-store", "headers": { "Accept": "application/json" } },
 		"#facturas": {
 			"headers": {
 				"x-root-node": "model",
@@ -105,11 +116,12 @@
 		},
 		"~.asp": {
 			"headers": {
+				"x-connection-id": "autofactura",
 				"x-referer-id": "${xover.session.referer_id}",
 				"authorization": "${xover.session.id_token}"
 			}
 		},
-		"server:request": {
+		"#server:request": {
 			"authentication": "#login"
 		},
 		"#shell": {

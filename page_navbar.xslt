@@ -1,4 +1,4 @@
-﻿<xsl:stylesheet version="1.0"
+<xsl:stylesheet version="1.0"
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns="http://www.w3.org/1999/xhtml"
 xmlns:xo="http://panax.io/xover"
@@ -64,6 +64,11 @@ xmlns:combobox="http://panax.io/widget/combobox"
   border: 3px solid rgba(50, 62, 72, 0.9);
 }*/
 			
+.page-menu nav:has(select[xo-slot][name="sentido"]) { padding-right: 1rem !important; }
+.page-menu form:has(select[xo-slot][name="sentido"]) { flex-wrap: wrap; align-items: end; gap: .5rem; }
+.page-menu fieldset:has(> #cfdi-sentido),
+.page-menu fieldset:has(> #cfdi-estatus) { min-width: 9rem; flex: 0 1 auto; }
+
 .navbar form {
     display: flex;
     flex-direction: row;
@@ -89,6 +94,17 @@ xmlns:combobox="http://panax.io/widget/combobox"
 		</span>
 	</xsl:template>
 
+	<xsl:template mode="widget" match="model/sentido[@navbar:control='select']|model/estatus[@navbar:control='select']" priority="2">
+		<xsl:variable name="selected" select="@state:selected"/>
+		<select id="cfdi-{name()}" name="{name()}" class="form-select" aria-label="{@navbar:headerText}" xo-slot="state:selected" value="{$selected}">
+			<xsl:for-each select="row">
+				<option value="{@key}">
+					<xsl:if test="@key=$selected"><xsl:attribute name="selected">selected</xsl:attribute></xsl:if>
+					<xsl:value-of select="@desc"/>
+				</option>
+			</xsl:for-each>
+		</select>
+	</xsl:template>
 	<xsl:template mode="buttons" match="*"/>
 
 	<xsl:template mode="button" match="*/@state:record_count">

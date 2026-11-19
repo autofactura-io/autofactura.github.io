@@ -22,6 +22,10 @@ exclude-result-prefixes="#default session sitemap shell"
 		<span>
 			<style>
 				<![CDATA[
+#cfdi-refresh { display: none; }
+body:has(main[xo-store="#resumen_descarga_cfdi"]) #cfdi-refresh { display: inline-flex; align-items: center; justify-content: center; }
+#cfdi-refresh:not(.btn-success) .bi-arrow-right,
+#cfdi-refresh.btn-success .bi-arrow-clockwise { display: none; }
 .avatar {
     margin-top: -15px;
     margin-bottom: -15px;
@@ -52,6 +56,13 @@ exclude-result-prefixes="#default session sitemap shell"
 					</div>
 				</li>
 
+				<button type="button" id="cfdi-refresh" class="btn" aria-label="Actualizar" title="Actualizar">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" aria-hidden="true" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z" />
+    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466" />
+  </svg>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/></svg>
+				</button>
 				<px-to-excel/>
 				<px-printer/>
 
@@ -109,13 +120,13 @@ exclude-result-prefixes="#default session sitemap shell"
 						<li>
 							<hr class="dropdown-divider"/>
 						</li>
-						<li onclick="xo.session.logout()">
-							<a class="dropdown-item" href="#">
+						<li>
+							<button type="button" class="dropdown-item" onclick="xo.session.logout()">
 								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-door-open-fill" viewBox="0 0 16 16">
 									<path d="M1.5 15a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H13V2.5A1.5 1.5 0 0 0 11.5 1H11V.5a.5.5 0 0 0-.57-.495l-7 1A.5.5 0 0 0 3 1.5V15H1.5zM11 2h.5a.5.5 0 0 1 .5.5V15h-1V2zm-2.5 8c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1z"/>
 								</svg>
 								<label>Salir</label>
-							</a>
+							</button>
 						</li>
 					</ul>
 				</div>
