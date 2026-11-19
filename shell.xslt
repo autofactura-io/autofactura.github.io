@@ -1,4 +1,4 @@
-﻿<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml"
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml"
 xmlns:session="http://panax.io/session"
 xmlns:sitemap="http://panax.io/sitemap"
 xmlns:shell="http://panax.io/shell"
@@ -7,6 +7,11 @@ xmlns:source="http://panax.io/xover/binding/source"
 xmlns:xlink="http://www.w3.org/1999/xlink"
 >
 	<xsl:include href="widgets/shell.xslt"/>
+
+	<xsl:template match="/">
+		<script src="/widgets/shell/shell.js"/>
+		<xsl:apply-templates mode="shell:widget"/>
+	</xsl:template>
 
 	<xsl:attribute-set name="shell:logo">
 		<xsl:attribute name="src">assets/logotype.png</xsl:attribute>

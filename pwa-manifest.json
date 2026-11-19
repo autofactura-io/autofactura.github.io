@@ -1,0 +1,10 @@
+{
+  "name": "Autofactura",
+  "short_name": "Autofactura",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "icons": [
+    { "src": "assets/favicon.png", "sizes": "any", "type": "image/png" }
+  ]
+}
