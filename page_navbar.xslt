@@ -94,6 +94,12 @@ xmlns:combobox="http://panax.io/widget/combobox"
 		</span>
 	</xsl:template>
 
+	<xsl:template mode="widget" match="model[sentido[@navbar:control='select'] and estatus[@navbar:control='select']]/fecha_consultada[@navbar:control='daterange']" priority="2">
+		<px-daterange name="{name()}" class="input-group" value="{@state:selected}" xo-slot="state:selected" picker="flatpickr" label="{@navbar:headerText}">
+			<xsl:attribute name="max">{{new Date().toISOString().slice(0,10)}}</xsl:attribute>
+		</px-daterange>
+	</xsl:template>
+
 	<xsl:template mode="widget" match="model/sentido[@navbar:control='select']|model/estatus[@navbar:control='select']" priority="2">
 		<xsl:variable name="selected" select="@state:selected"/>
 		<select id="cfdi-{name()}" name="{name()}" class="form-select" aria-label="{@navbar:headerText}" xo-slot="state:selected" value="{$selected}">

@@ -27,7 +27,7 @@
 		"#login": "login.xml",
 		"#loading": true,
 		"#settings": "settings.xml",
-		"px-daterange": "widgets/daterange.xhtml",
+		"px-daterange": "autofactura/components/daterange.xhtml?v=20261119.3",
 		"px-combobox": "widgets/combobox.xhtml",
 		"px-printer": "widgets/printer.xhtml",
 		"px-loader": "widgets/loader.xhtml",

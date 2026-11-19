@@ -1,0 +1,160 @@
+<template shadowrootmode="open" value="" min="" max="" picker="native" date-format="m/d/Y" label="Rango de fechas">
+    <script>
+        // picker="flatpickr" usa el script y la hoja de estilos de la página anfitriona.
+        const rangePattern = /^(\d{4}-?\d{2}-?\d{2})?[-~](\d{4}-?\d{2}-?\d{2})?$/;
+
+        function readRange(value) {
+            const [, from = '', to = ''] = String(value ?? '').trim().match(rangePattern) || [];
+            return [from.replaceAll('-', ''), to.replaceAll('-', '')];
+        }
+
+        function isoDate(value) {
+            return value.replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3');
+        }
+
+        constructor.extend({
+            init() {
+                this.disposeDateRange?.();
+                const { lowerRange, upperRange, calendarDialog } = this.parts;
+                const document = this.ownerDocument;
+                const view = document.defaultView;
+                let closeCalendar;
+
+                const render = () => {
+                    const flatpickr = view.flatpickr;
+                    const useFlatpickr = this.getAttribute('picker') === 'flatpickr' ? typeof flatpickr === 'function' : false;
+                    const [from, to] = readRange(this.value);
+                    const format = this.getAttribute('date-format') || 'm/d/Y';
+                    for (const [field, value, label] of [[lowerRange, from, 'Desde'], [upperRange, to, 'Hasta']]) {
+                        if (useFlatpickr) {
+                            field.type = 'button';
+                            const date = value ? flatpickr.parseDate(isoDate(value), 'Y-m-d') : undefined;
+                            field.value = date ? flatpickr.formatDate(date, format) : label;
+                            field.setAttribute('aria-haspopup', 'dialog');
+                            field.setAttribute('aria-label', label + (date ? ': ' + field.value : ''));
+                        } else {
+                            field.type = 'date';
+                            field.value = isoDate(value);
+                            field.removeAttribute('aria-haspopup');
+                            field.setAttribute('aria-label', label);
+                        }
+                    }
+                };
+
+                const open = event => {
+                    const trigger = event.currentTarget;
+                    if (trigger.type !== 'button' || closeCalendar) return;
+                    const dialog = calendarDialog.firstElementChild.cloneNode(true);
+                    const calendar = dialog.querySelector('input');
+                    const label = this.getAttribute('label') || 'Rango de fechas';
+                    dialog.querySelector('p').textContent = label;
+                    dialog.setAttribute('aria-label', label);
+                    document.body.append(dialog);
+
+                    const [from, to] = readRange(this.value);
+                    const observer = new view.MutationObserver(() => {
+                        if (!this.isConnected || !trigger.isConnected) closeCalendar?.();
+                    });
+                    const picker = view.flatpickr(calendar, {
+                        inline: true,
+                        mode: 'range',
+                        dateFormat: 'Y-m-d',
+                        minDate: this.getAttribute('min') || undefined,
+                        maxDate: this.getAttribute('max') || undefined,
+                        defaultDate: [from, to].every(Boolean) ? [isoDate(from), isoDate(to)] : [],
+                        onReady(_, __, instance) {
+                            if (Boolean(from) !== Boolean(to)) instance.jumpToDate(isoDate(from || to));
+                        },
+                        onChange: (dates, _, instance) => {
+                            if (dates.length !== 2) return;
+                            this.selectDateRange(dates.map(date => instance.formatDate(date, 'Ymd')).join('-'));
+                            dialog.close();
+                        }
+                    });
+
+                    closeCalendar = () => {
+                        observer.disconnect();
+                        picker.destroy();
+                        dialog.remove();
+                        closeCalendar = undefined;
+                        if (trigger.isConnected) trigger.focus();
+                    };
+                    dialog.onclose = () => {
+                        // XOver puede cerrar y reabrir el diálogo durante el montaje.
+                        if (!dialog.open) closeCalendar?.();
+                    };
+                    dialog.querySelector('[data-clear]').onclick = () => {
+                        this.selectDateRange('');
+                        dialog.close();
+                    };
+                    dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
+                    dialog.showModal();
+                    observer.observe(document.documentElement, { childList: true, subtree: true });
+                };
+
+                const selectNative = event => {
+                    const changed = event.currentTarget;
+                    if (changed.preventChangeEvent) {
+                        changed.preventChangeEvent = undefined;
+                        event.preventDefault();
+                        return;
+                    }
+                    if (!lowerRange.validity.valid || !upperRange.validity.valid) return;
+                    const from = lowerRange.value;
+                    const to = upperRange.value;
+                    if (Boolean(from) !== Boolean(to)) return;
+                    if (from > to) {
+                        const other = changed === lowerRange ? upperRange : lowerRange;
+                        other.value = '';
+                        return;
+                    }
+                    this.selectDateRange(from ? from + '~' + to : '');
+                };
+
+                lowerRange.onclick = upperRange.onclick = open;
+                lowerRange.onchange = upperRange.onchange = selectNative;
+                const attributes = new view.MutationObserver(render);
+                attributes.observe(this, { attributes: true, attributeFilter: ['value', 'picker', 'date-format'] });
+                this.renderDateRange = render;
+                this.disposeDateRange = () => {
+                    attributes.disconnect();
+                    closeCalendar?.();
+                };
+                render();
+            },
+
+            selectDateRange(value) {
+                const previous = this.value;
+                this.value = value;
+                if (this.value !== previous) this.dispatchEvent(new Event('change', { bubbles: true }));
+            },
+
+            value: {
+                get() {
+                    return this.getAttribute('value') || '';
+                },
+                set(input) {
+                    const [from, to] = readRange(input);
+                    const value = from || to ? from + '-' + to : '';
+                    if (value !== this.value) this.setAttribute('value', value);
+                    this.renderDateRange?.();
+                    return value;
+                }
+            }
+        });
+    </script>
+    <div class="{{@class}}">
+        <input class="form-control" type="date" pattern="yyyy-mm-dd" value="" part="lowerRange" min="{{@min}}" max="{{@max}}" aria-label="Desde" />
+        <input class="form-control" type="date" pattern="yyyy-mm-dd" value="" part="upperRange" min="{{@min}}" max="{{@max}}" aria-label="Hasta" />
+    </div>
+    <div part="calendarDialog" hidden="">
+        <dialog style="border: 1px solid var(--bs-border-color, #adb5bd); border-radius: .5rem; padding: 1rem;">
+            <p class="mb-2 fw-semibold"></p>
+            <input type="hidden" />
+            <div class="d-flex justify-content-between gap-3 mt-3">
+                <button type="button" class="btn btn-outline-secondary" data-clear="">Borrar</button>
+                <button type="button" class="btn btn-secondary" data-cancel="">Cancelar</button>
+            </div>
+        </dialog>
+    </div>
+</template>

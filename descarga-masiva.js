@@ -114,6 +114,18 @@ xo.listener.on('beforeFetch', function ({ request }) {
         this.inert = true;
         updateRefreshButton();
     });
+    window.addEventListener('change', function (event) {
+        const field = event.target;
+        if (location.hash !== reportTag || !field.matches?.('px-daterange[name=fecha_consultada][xo-slot="state:selected"]')) return;
+        const model = xo.stores[reportTag].document.documentElement;
+        const dateFilter = [...model?.children || []].find(node => node.localName === 'fecha_consultada');
+        if (!dateFilter) return;
+        const value = field.value || '';
+        if (dateFilter.getAttributeNS(stateNamespace, 'selected') !== value) {
+            dateFilter.setAttributeNS(stateNamespace, 'state:selected', value);
+        }
+        updateRefreshButton();
+    }, true);
     xo.listener.on('input::input[name=uuid][xo-slot]', function () {
         if (location.hash !== reportTag) return;
         const selection = this.scope;
