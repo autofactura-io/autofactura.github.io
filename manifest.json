@@ -93,7 +93,7 @@
 		"#resumen_descarga_cfdi": {
 			"cache": "no-store",
 			"headers": { "Accept": "application/xml, text/xml" },
-			"stylesheets": [{ "href": "reportes/resumen_descarga_CFDI.xslt", "target": "@#shell main" }],
+			"stylesheets": [{ "href": "reportes/resumen_descarga_cfdi.xslt", "target": "@#shell main" }],
 			"expiry": 1
 		},
 		"#server:login": { "resumable": false, "rejectCodes": 400, "authentication": false, "cache": "no-store" },
