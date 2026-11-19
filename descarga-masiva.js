@@ -49,6 +49,24 @@ async function mostrarAccesoAutofactura() {
     await xo.stores['#login'].render();
 }
 
+xo.listener.on('xover-initializing', function () {
+    // La primera transformación necesita una ruta y un shell antes de resolver su destino.
+    if (!xo.session.authorization) {
+        xo.site.seed = '#login';
+        if (location.hash !== '#login') location.hash = '#login';
+        return;
+    }
+    if (!location.hash || location.hash === '#login') {
+        const route = String(xo.session.user_login || '').toLowerCase() === 'mayorga'
+            ? '#resumen_descarga_cfdi'
+            : '#factura_global';
+        xo.site.seed = route;
+        location.hash = route;
+    }
+    if (!document.querySelector('#shell main')) {
+        xo.stores['#shell'].render().catch(error => console.error('Autofactura:', error?.status || error?.name));
+    }
+});
 xo.listener.on('logout', mostrarAccesoAutofactura);
 xo.listener.on('xover-initialized', async function () {
     if (!xo.session.authorization) return mostrarAccesoAutofactura();
