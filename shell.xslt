@@ -6,7 +6,7 @@ xmlns:state="http://panax.io/state"
 xmlns:source="http://panax.io/xover/binding/source"
 xmlns:xlink="http://www.w3.org/1999/xlink"
 >
-	<xsl:include href="widgets/shell.xslt"/>
+	<xsl:include href="widgets/shell/shell.xslt"/>
 
 	<xsl:template match="/">
 		<script src="/widgets/shell/shell.js"/>
