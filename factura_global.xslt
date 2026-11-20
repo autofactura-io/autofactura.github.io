@@ -1205,9 +1205,12 @@
 					applyFilters();
 				}
 
-				const model = await ticketsStore.ready;
+				await ticketsStore.ready;
+				if (ticketsStore.document.documentElement?.localName !== 'model') {
+					await ticketsStore.fetch();
+				}
 				if (!isCurrent() || !filterAside.isConnected) return;
-				syncTickets(model);
+				syncTickets(ticketsStore.document);
 				bind(filterAside);
 				window.addEventListener('success', ({ detail }) => {
 					if (detail?.request?.target !== ticketsStore.document || !isCurrent() || !filterAside.isConnected) return;
