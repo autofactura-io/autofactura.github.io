@@ -35,6 +35,8 @@ if (!customElements.get('af-ticket-filters')) {
 
 autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { prefix, applyId, resetId, helpText }) {
     if (!anchor) return;
+    const mountToken = {};
+    autofactura.ticketFiltersMountToken = mountToken;
     autofactura.ticketFiltersCleanup?.();
     const owner = anchor.closest('section');
     const id = name => `${prefix}-${name}`;
@@ -64,7 +66,7 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
         aside.remove();
         throw error;
     }
-    if (!owner?.isConnected) {
+    if (!owner?.isConnected || !aside.isConnected || autofactura.ticketFiltersMountToken !== mountToken) {
         backdrop.remove();
         aside.remove();
         return null;
@@ -120,18 +122,19 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
         if (event.key === 'Escape') setOpen(false);
     });
     const observer = new MutationObserver(() => {
-        if (!owner?.isConnected) autofactura.ticketFiltersCleanup?.();
+        if (!owner?.isConnected) cleanup();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    autofactura.ticketFiltersCleanup = () => {
+    const cleanup = () => {
         observer.disconnect();
         backdrop.remove();
         if (calendarModal.style.display !== 'none') closeCalendar();
         calendarModal.remove();
         toggle.remove();
         aside.remove();
-        autofactura.ticketFiltersCleanup = null;
+        if (autofactura.ticketFiltersCleanup === cleanup) autofactura.ticketFiltersCleanup = null;
     };
+    autofactura.ticketFiltersCleanup = cleanup;
     autofactura.restoreTicketFilters(aside, prefix);
     const remember = event => {
         if (event.target.matches('input, select')) autofactura.captureTicketFilters(aside, prefix);

@@ -23,10 +23,6 @@ async function iniciarAutofactura() {
     if (route === '#resumen_descarga_cfdi') {
         return xo.stores[route].render();
     }
-    return Promise.all([
-        xo.sources['#facturas'].fetch(),
-        xo.sources['#tax_rules'].fetch()
-    ]);
 }
 
 

@@ -38,9 +38,10 @@
 		"#sitemap": "sitemap.xml",
 		"/widgets/page_navbar.xslt": "/page_navbar.xslt",
 		"/widgets/sitemap.xslt": "/sitemap.xslt",
-		"#factura_global": "factura_global_scoped.html",
+		"#factura_global": "factura_global.xml",
 		"#impuestos": "impuestos_scoped.html",
 		"#concentrador": "concentrador_scoped.html",
+		"#prefactura": "prefactura.xml",
 		"#resumen_descarga_cfdi": {
 			"server:request": { "FROM": "[DescargaMasiva].[reporteDescargaCFDI]" }
 		},
@@ -90,6 +91,7 @@
 		"#factura_global": { "target": "@#shell main" },
 		"#impuestos": { "target": "@#shell main" },
 		"#concentrador": { "target": "@#shell main" },
+		"#prefactura": { "target": "@#shell main" },
 		"#resumen_descarga_cfdi": {
 			"cache": "no-store",
 			"headers": { "Accept": "application/xml, text/xml" },
