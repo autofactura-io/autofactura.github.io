@@ -1,3 +1,9 @@
+let rutaPendienteAutofactura;
+
+function sesionAutofacturaAutorizada() {
+    return xo.session.status === 'authorized' && Boolean(xo.session.authorization);
+}
+
 function rutaInicialAutofactura() {
     if (String(xo.session.user_login || '').trim().toLowerCase() === 'mayorga') {
         return '#resumen_descarga_cfdi';
@@ -5,24 +11,31 @@ function rutaInicialAutofactura() {
     return '#factura_global';
 }
 
-function elegirRutaAutofactura() {
-    const initial = rutaInicialAutofactura();
-    const current = location.hash;
-    return initial === '#resumen_descarga_cfdi' || !current || current === '#login' ? initial : current;
+function esRutaAutofactura(hash) {
+    return Boolean(hash && hash !== '#' && hash !== '#login');
+}
+
+function fijarRutaAutofactura(ruta) {
+    history.replaceState({ ...history.state, seed: ruta, active: ruta }, '', ruta);
+}
+
+function prepararAccesoAutofactura() {
+    if (esRutaAutofactura(location.hash)) rutaPendienteAutofactura = location.hash;
+    fijarRutaAutofactura('#login');
+    document.getElementById('shell')?.remove();
 }
 
 async function iniciarAutofactura() {
-    if (!xo.session.authorization) return;
+    if (!sesionAutofacturaAutorizada()) return;
 
-    const route = elegirRutaAutofactura();
-    const navigate = location.hash !== route;
-    xo.site.seed = route;
+    const initial = rutaInicialAutofactura();
+    const ruta = initial === '#resumen_descarga_cfdi' ? initial
+        : (esRutaAutofactura(location.hash) && location.hash) || rutaPendienteAutofactura || initial;
+    rutaPendienteAutofactura = undefined;
+    fijarRutaAutofactura(ruta);
     if (!document.querySelector('#shell main')) await xo.stores['#shell'].render();
-    if (navigate) location.hash = route;
-
-    if (route === '#resumen_descarga_cfdi') {
-        return xo.stores[route].render();
-    }
+    if (!sesionAutofacturaAutorizada()) return mostrarAccesoAutofactura();
+    if (location.hash === ruta) return xo.stores[ruta].render();
 }
 
 
@@ -48,36 +61,30 @@ async function iniciarSesionAutofactura(form) {
     }
 }
 
-xo.listener.on('login', function () {
-    if (xo.session.authorization) xo.site.seed = elegirRutaAutofactura();
-    // Load the report after XOver completes the login transition.
-    setTimeout(() => iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name)), 0);
-});
 async function mostrarAccesoAutofactura() {
-    xo.site.seed = '#login';
-    if (location.hash !== '#login') location.hash = '#login';
+    prepararAccesoAutofactura();
     await xo.stores['#login'].render();
 }
 
+xo.listener.on('beforeRender::#shell', function ({ event }) {
+    if (!sesionAutofacturaAutorizada()) event.preventDefault();
+});
+xo.listener.on('beforeRender::#login', function () {
+    prepararAccesoAutofactura();
+});
 xo.listener.on('xover-initializing', function () {
-    // La primera transformación necesita una ruta y un shell antes de resolver su destino.
-    if (!xo.session.authorization) {
-        xo.site.seed = '#login';
-        if (location.hash !== '#login') location.hash = '#login';
-        return;
-    }
-    const route = elegirRutaAutofactura();
-    xo.site.seed = route;
-    if (location.hash !== route) location.hash = route;
-    if (!document.querySelector('#shell main')) {
-        xo.stores['#shell'].render().catch(error => console.error('Autofactura:', error?.status || error?.name));
-    }
+    if (!sesionAutofacturaAutorizada()) prepararAccesoAutofactura();
+});
+xo.listener.on('xover-initialized', function () {
+    const mount = sesionAutofacturaAutorizada() ? iniciarAutofactura : mostrarAccesoAutofactura;
+    return mount().catch(error => console.error('Autofactura:', error?.status || error?.name));
+});
+xo.listener.on('login', function () {
+    // XOver actualiza la autorización de Basic al terminar el evento de login.
+    setTimeout(() => iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name)), 0);
 });
 xo.listener.on('logout', mostrarAccesoAutofactura);
-xo.listener.on('xover-initialized', async function () {
-    if (!xo.session.authorization) return mostrarAccesoAutofactura();
-    await iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name));
-});
+
 
 function mostrarDetalleSolicitud(solicitudId) {
     const detail = document.getElementById(solicitudId);
