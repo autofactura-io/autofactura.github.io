@@ -451,10 +451,11 @@
 					</footer>
 
 					<div class="fg-pagination d-flex justify-content-between align-items-center mt-3">
-						<small class="text-muted" id="fg-page-info">Página 1</small>
+						<small class="text-muted" id="fg-page-info" aria-live="polite">Página 1</small>
 						<div class="btn-group">
 							<button id="fg-btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
 							<button id="fg-btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
+							<button type="button" id="fg-btn-more" class="btn btn-outline-secondary btn-sm" hidden="hidden">Cargar más tickets</button>
 						</div>
 					</div>
 
@@ -726,18 +727,22 @@
 
 			function populatePaymentFilter() {
 				const select = $('fg-f-formapago');
+				const value = select.value;
 				const forms = [...new Set(allTickets.flatMap(ticket => ticket.formasPago || []).filter(Boolean))]
 					.sort((a, b) => a.localeCompare(b, 'es'));
 				select.innerHTML = '<option value="">Todos</option>' +
 					forms.map(form => '<option value="' + escapeHtml(form) + '">' + escapeHtml(form) + '</option>').join('');
+				if ([...select.options].some(option => option.value === value)) select.value = value;
 			}
 
 			function populateBranchFilter() {
 				const select = $('fg-f-sucursal');
+				const value = select.value;
 				const branches = [...new Set(allTickets.map(ticket => ticket.sucursal).filter(Boolean))]
 					.sort((a, b) => a.localeCompare(b, 'es'));
 				select.innerHTML = '<option value="">Todos</option>' +
 					branches.map(branch => '<option value="' + escapeHtml(branch) + '">' + escapeHtml(branch) + '</option>').join('');
+				if ([...select.options].some(option => option.value === value)) select.value = value;
 			}
 
 			function resetFilterValues() {
@@ -859,7 +864,9 @@
 					.catch(error => console.error('Factura Global:', error));
 
 				const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-				$('fg-page-info').textContent = `Página ${pageIndex + 1} de ${totalPages} — ${filtered.length} tickets`;
+				updateLoadedTickets();
+				const total = pageMetadata(model).total || allTickets.length;
+				$('fg-page-info').textContent = `Página ${pageIndex + 1} de ${totalPages} · ${filtered.length} filtrados · ${allTickets.length} de ${total} cargados`;
 				$('fg-btn-prev').disabled = pageIndex === 0;
 				$('fg-btn-next').disabled = pageIndex >= totalPages - 1;
 				updateSummary(); updateButtons();
@@ -1023,10 +1030,79 @@
 				}, { signal });
 			}
 
+			const metaNamespace = 'http://panax.io/metadata';
+			let loadingMore = false;
+
+			function pageMetadata(model) {
+				const root = model.documentElement;
+				const read = name => Number(root.getAttributeNS(metaNamespace, name) || root.getAttribute('meta:' + name));
+				return { index: read('pageIndex'), size: read('pageSize'), total: read('totalCount') };
+			}
+
+			function updateLoadedTickets() {
+				const button = $('fg-btn-more');
+				const page = pageMetadata(ticketsStore.document);
+				button.hidden = !(page.index * page.size < page.total);
+				button.disabled = loadingMore;
+				button.textContent = loadingMore ? 'Cargando tickets…' : 'Cargar más tickets';
+			}
+
+			async function loadMoreTickets() {
+				if (loadingMore) return;
+				const model = ticketsStore.document;
+				const page = pageMetadata(model);
+				if (!(page.index * page.size < page.total)) return;
+				const nextIndex = page.index + 1;
+				const params = new URLSearchParams({
+					FROM: 'autofactura.portalTickets',
+					'@xml': '<query page_size="' + page.size + '" page_index="' + nextIndex + '" order_by="[@dt] DESC" />'
+				});
+				loadingMore = true;
+				updateLoadedTickets();
+				try {
+					const context = xo.xml.createDocument('<model/>');
+					const response = await xo.server.request.call(context, params,
+						new Headers({ Accept: 'application/xml, text/xml' }), { cache: 'no-store' });
+					if (!isCurrent() || ticketsStore.document !== model) return;
+					if (response?.documentElement?.localName !== 'model' || pageMetadata(response).index !== nextIndex) {
+						throw new Error('La consulta no devolvió la página de tickets solicitada.');
+					}
+					const ids = new Set([...model.documentElement.children]
+						.filter(row => row.localName === 'row').map(row => row.getAttribute('id')));
+					const fragment = model.createDocumentFragment();
+					for (const row of response.documentElement.children) {
+						if (row.localName !== 'row' || ids.has(row.getAttribute('id'))) continue;
+						fragment.appendChild(model.importNode(row, true));
+						ids.add(row.getAttribute('id'));
+					}
+					model.documentElement.appendChild(fragment);
+					model.documentElement.setAttributeNS(metaNamespace, 'meta:pageIndex', String(nextIndex));
+					model.documentElement.setAttributeNS(metaNamespace, 'meta:totalCount', String(pageMetadata(response).total));
+					const previousMatches = filtered.length;
+					const previousPage = pageIndex;
+					allTickets.splice(0, allTickets.length, ...readTickets(model));
+					populateBranchFilter();
+					populatePaymentFilter();
+					applyFilters();
+					pageIndex = filtered.length > previousMatches ? Math.floor(previousMatches / PAGE_SIZE) : previousPage;
+					render();
+				} catch (error) {
+					if (isCurrent()) xo.dom.alert('No se pudieron cargar más tickets. Vuelve a intentarlo.');
+					console.error('Factura Global:', error?.message || error?.status || error);
+				} finally {
+					loadingMore = false;
+					if (isCurrent()) updateLoadedTickets();
+				}
+			}
+
 			function bindStablePaginationEvents() {
 				document.addEventListener('click', (event) => {
-					const button = event.target.closest?.('#fg-btn-prev, #fg-btn-next');
+					const button = event.target.closest?.('#fg-btn-prev, #fg-btn-next, #fg-btn-more');
 					if (!button || button.disabled) return;
+					if (button.id === 'fg-btn-more') {
+						loadMoreTickets();
+						return;
+					}
 					const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 					if (button.id === 'fg-btn-prev' && pageIndex > 0) {
 						pageIndex--;

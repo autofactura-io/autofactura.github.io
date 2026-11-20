@@ -49,8 +49,8 @@
 		"value-filter": "widgets/value-filter.xhtml",
 		"#facturas": {
 			"server:request": {
-				"FROM": "autofactura.tickets",
-				"^X-ORDER-BY": "[@tkt]"
+				"FROM": "autofactura.portalTickets",
+				"@xml": "<query page_size=\"500\" page_index=\"1\" order_by=\"[@dt] DESC\" />"
 			}
 		},
 		"#tax_rules": {
@@ -101,12 +101,8 @@
 		"#server:login": { "resumable": false, "rejectCodes": 400, "authentication": false, "cache": "no-store" },
 		"#server:logout": { "resumable": false, "authentication": false, "cache": "no-store", "headers": { "Accept": "application/json" } },
 		"#facturas": {
-			"headers": {
-				"x-root-node": "model",
-				"x-row-node": "row",
-				"x-xml-mode": "PATH",
-				"x-page-size": "10000"
-			}
+			"cache": "no-store",
+			"headers": { "Accept": "application/xml, text/xml" }
 		},
 		"#tax_rules": {
 			"headers": {
