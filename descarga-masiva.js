@@ -20,6 +20,7 @@ function fijarRutaAutofactura(ruta) {
 }
 
 function alternarSuperficieAutofactura(autorizada) {
+    document.body.toggleAttribute('data-autofactura-authorized', autorizada);
     document.getElementById('autofactura-app').hidden = !autorizada;
     document.getElementById('autofactura-access').hidden = autorizada;
 }
