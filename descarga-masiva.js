@@ -1,21 +1,34 @@
-/* Use the configured Panax session and XOver stores for every request. */
-async function iniciarAutofactura() {
-    if (!xo.session.authorization) {
-        return;
+function rutaInicialAutofactura() {
+    if (String(xo.session.user_login || '').trim().toLowerCase() === 'mayorga') {
+        return '#resumen_descarga_cfdi';
     }
-    if (String(xo.session.user_login || '').toLowerCase() === 'mayorga') {
-        if (!document.querySelector('#shell main')) await xo.stores['#shell'].render();
-        if (location.hash !== '#resumen_descarga_cfdi') {
-            xo.site.seed = '#resumen_descarga_cfdi';
-            location.hash = '#resumen_descarga_cfdi';
-        }
-        return xo.stores['#resumen_descarga_cfdi'].render();
+    return '#factura_global';
+}
+
+function elegirRutaAutofactura() {
+    const initial = rutaInicialAutofactura();
+    const current = location.hash;
+    return initial === '#resumen_descarga_cfdi' || !current || current === '#login' ? initial : current;
+}
+
+async function iniciarAutofactura() {
+    if (!xo.session.authorization) return;
+
+    const route = elegirRutaAutofactura();
+    const navigate = location.hash !== route;
+    xo.site.seed = route;
+    if (!document.querySelector('#shell main')) await xo.stores['#shell'].render();
+    if (navigate) location.hash = route;
+
+    if (route === '#resumen_descarga_cfdi') {
+        return xo.stores[route].render();
     }
     return Promise.all([
         xo.sources['#facturas'].fetch(),
         xo.sources['#tax_rules'].fetch()
     ]);
 }
+
 
 async function iniciarSesionAutofactura(form) {
     const message = form.querySelector('[role="alert"]');
@@ -40,6 +53,7 @@ async function iniciarSesionAutofactura(form) {
 }
 
 xo.listener.on('login', function () {
+    if (xo.session.authorization) xo.site.seed = elegirRutaAutofactura();
     // Load the report after XOver completes the login transition.
     setTimeout(() => iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name)), 0);
 });
@@ -56,13 +70,9 @@ xo.listener.on('xover-initializing', function () {
         if (location.hash !== '#login') location.hash = '#login';
         return;
     }
-    if (!location.hash || location.hash === '#login') {
-        const route = String(xo.session.user_login || '').toLowerCase() === 'mayorga'
-            ? '#resumen_descarga_cfdi'
-            : '#factura_global';
-        xo.site.seed = route;
-        location.hash = route;
-    }
+    const route = elegirRutaAutofactura();
+    xo.site.seed = route;
+    if (location.hash !== route) location.hash = route;
     if (!document.querySelector('#shell main')) {
         xo.stores['#shell'].render().catch(error => console.error('Autofactura:', error?.status || error?.name));
     }
