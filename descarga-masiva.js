@@ -19,7 +19,13 @@ function fijarRutaAutofactura(ruta) {
     history.replaceState({ ...history.state, seed: ruta, active: ruta }, '', ruta);
 }
 
+function alternarSuperficieAutofactura(autorizada) {
+    document.getElementById('autofactura-app').hidden = !autorizada;
+    document.getElementById('autofactura-access').hidden = autorizada;
+}
+
 function prepararAccesoAutofactura() {
+    alternarSuperficieAutofactura(false);
     if (esRutaAutofactura(location.hash)) rutaPendienteAutofactura = location.hash;
     fijarRutaAutofactura('#login');
     document.getElementById('shell')?.remove();
@@ -32,8 +38,10 @@ async function iniciarAutofactura() {
     const ruta = initial === '#resumen_descarga_cfdi' ? initial
         : (esRutaAutofactura(location.hash) && location.hash) || rutaPendienteAutofactura || initial;
     rutaPendienteAutofactura = undefined;
+    const montarShell = document.getElementById('autofactura-app').hidden || !document.querySelector('#shell main');
     fijarRutaAutofactura(ruta);
-    if (!document.querySelector('#shell main')) await xo.stores['#shell'].render();
+    alternarSuperficieAutofactura(true);
+    if (montarShell) await xo.stores['#shell'].render();
     if (!sesionAutofacturaAutorizada()) return mostrarAccesoAutofactura();
     if (location.hash === ruta) return xo.stores[ruta].render();
 }
