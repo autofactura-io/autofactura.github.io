@@ -1055,7 +1055,7 @@
 				const nextIndex = page.index + 1;
 				const params = new URLSearchParams({
 					FROM: 'autofactura.portalTickets',
-					'@xml': '<query page_size="' + page.size + '" page_index="' + nextIndex + '" order_by="[@dt] DESC" />'
+					'@xml': '<query page_size="' + page.size + '" page_index="' + nextIndex + '" order_by="[@tkt]" />'
 				});
 				loadingMore = true;
 				updateLoadedTickets();

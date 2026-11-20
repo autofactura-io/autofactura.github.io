@@ -50,7 +50,7 @@
 		"#facturas": {
 			"server:request": {
 				"FROM": "autofactura.portalTickets",
-				"@xml": "<query page_size=\"500\" page_index=\"1\" order_by=\"[@dt] DESC\" />"
+				"@xml": "<query page_size=\"50\" page_index=\"1\" order_by=\"[@tkt]\" />"
 			}
 		},
 		"#tax_rules": {
