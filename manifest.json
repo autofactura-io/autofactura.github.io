@@ -91,6 +91,7 @@
 			}
 		},
 		"#factura_global": { "target": "@#shell main", "cache": "no-store" },
+		"factura_global.xslt||factura_global_tickets.xslt||factura_global_detalle.xslt": { "cache": "reload" },
 		"#impuestos": { "target": "@#shell main" },
 		"#concentrador": { "target": "@#shell main" },
 		"#prefactura": { "target": "@#shell main" },
