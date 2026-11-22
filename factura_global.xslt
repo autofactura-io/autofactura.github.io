@@ -471,11 +471,11 @@
 								<h2 id="fg-ticket-dialog-title" class="h5 mb-0">Ticket</h2>
 								<form method="dialog"><button type="submit" class="btn-close" aria-label="Cerrar ticket"></button></form>
 							</header>
-							<div id="fg-ticket-full" class="shell-dialog__layout" xo-source="#facturas" xo-stylesheet="reportes/factura_global_detalle.xslt?v=4"></div>
+							<div id="fg-ticket-full" class="shell-dialog__layout" xo-source="#facturas" xo-stylesheet="/reportes/portal_factura_global_detalle.xslt"></div>
 						</dialog>
 					</template>
 					<div class="table-responsive">
-						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="reportes/factura_global_tickets.xslt?v=4">
+						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="/reportes/portal_factura_global_tickets.xslt">
 							<p role="status">Cargando tickets&#8230;</p>
 						</div>
 					</div>
