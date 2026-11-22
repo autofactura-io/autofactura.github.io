@@ -21,7 +21,7 @@
             const value = number(node, names, fallback);
             return Math.abs(value) > 1 ? value / 100 : value;
         };
-        const tickets = [...store.document.querySelectorAll('model > row')].filter(row => ids.has(row.getAttribute('id'))).map(row => {
+        const tickets = [...store.document.querySelectorAll('model > row, model > selected-tickets > row')].filter(row => ids.has(row.getAttribute('id'))).map(row => {
             const subtotal = number(row, ['st']);
             const tasaIVA = rate(row, ['tasaIVA', 'iva_tasa', 'tasa'], .16);
             const tasaIEPS = rate(row, ['tasaIEPS', 'ieps_tasa']);

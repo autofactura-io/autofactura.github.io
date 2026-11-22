@@ -297,6 +297,13 @@
 			cursor: pointer;
 		}
 
+		#fg-ticket-dialog {
+			width: min(52rem, calc(100% - 2rem));
+			max-height: calc(100% - 2rem);
+		}
+
+		#fg-ticket-dialog::backdrop { background: rgba(0, 0, 0, .5); }
+
 		/* Renglones internos de cada ticket: productos, impuestos y pagos. */
 		#factura-global #fg-tbody td {
 			vertical-align: top;
@@ -451,15 +458,24 @@
 					</footer>
 
 					<div class="fg-pagination d-flex justify-content-between align-items-center mt-3">
-						<small class="text-muted" id="fg-page-info">Página 1</small>
+						<small class="text-muted" id="fg-page-info" aria-live="polite">Página 1</small>
 						<div class="btn-group">
 							<button id="fg-btn-prev" class="btn btn-outline-secondary btn-sm">Anterior</button>
 							<button id="fg-btn-next" class="btn btn-outline-secondary btn-sm">Siguiente</button>
 						</div>
 					</div>
 
+					<template id="fg-ticket-dialog-template">
+						<dialog id="fg-ticket-dialog" aria-labelledby="fg-ticket-dialog-title" class="shell-dialog rounded border shadow p-0">
+							<header class="d-flex justify-content-between align-items-center border-bottom p-3">
+								<h2 id="fg-ticket-dialog-title" class="h5 mb-0">Ticket</h2>
+								<form method="dialog"><button type="submit" class="btn-close" aria-label="Cerrar ticket"></button></form>
+							</header>
+							<div id="fg-ticket-full" class="shell-dialog__layout" xo-source="#facturas" xo-stylesheet="reportes/factura_global_detalle.xslt?v=3"></div>
+						</dialog>
+					</template>
 					<div class="table-responsive">
-						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="reportes/factura_global_tickets.xslt?v=2">
+						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="reportes/factura_global_tickets.xslt?v=3">
 							<p role="status">Cargando tickets&#8230;</p>
 						</div>
 					</div>
@@ -617,14 +633,13 @@
 			const { signal } = fg.viewEvents = new AbortController();
 			fg.allTickets = [];
 			fg.filtered = [];
-			fg.pageIndex = 0;
 			// Selection lives on #facturas rows as state:selected.
 			fg.selected = autofactura.ticketSelection;
 			fg.invoiceInProgress = false;
 			if (!('pendingStatusTicketId' in fg)) fg.pendingStatusTicketId = null;
 			if (!('pendingStatusAction' in fg)) fg.pendingStatusAction = null;
 
-			let allTickets = fg.allTickets, filtered = fg.filtered, pageIndex = fg.pageIndex, selected = fg.selected;
+			let allTickets = fg.allTickets, filtered = fg.filtered, selected = fg.selected;
 			function showLoader(on) {
 				const el = document.getElementById('top-loader');
 				if (!el) return;
@@ -661,9 +676,9 @@
 				.replaceAll('<', '&lt;')
 				.replaceAll('>', '&gt;');
 
-			function readTickets(model) {
+			function readTickets(model, rows) {
 				if (model.documentElement?.localName !== 'model') throw new Error('Respuesta de tickets no válida');
-				return Array.from(model.select('model/row'), row => {
+				return Array.from(rows ?? model.querySelectorAll('model > row, model > selected-tickets > row'), row => {
 					const i = row.getAttribute("id");
 					const d = row.getAttribute("dt").parseDate();
 					const subtotal = roundMoney(row.getAttribute("st"));
@@ -714,7 +729,8 @@
 							if (value) row.setAttribute('receptor', value);
 							else row.removeAttribute('receptor');
 						},
-						fecha: d.toISOString().slice(0, 10), folio: row.getAttribute("tkt"),
+						outsideQuery: row.parentNode.localName === 'selected-tickets',
+						fecha: d.toISOString().slice(0, 10), fechaHora: row.getAttribute("dt"), folio: row.getAttribute("tkt"),
 						sucursal: row.getAttribute("suc"),
 						get formaPago() { return row.getAttribute('fp') || ''; },
 						formaPagoSugerida, formasPago, pagos, pagosDetallados: paymentNodes.length > 0,
@@ -726,23 +742,56 @@
 
 			function populatePaymentFilter() {
 				const select = $('fg-f-formapago');
-				const forms = [...new Set(allTickets.flatMap(ticket => ticket.formasPago || []).filter(Boolean))]
+				const value = select.value;
+				const forms = [...new Set([value, ...Array.from(select.options, option => option.value), ...allTickets.flatMap(ticket => ticket.formasPago || [])].filter(Boolean))]
 					.sort((a, b) => a.localeCompare(b, 'es'));
 				select.innerHTML = '<option value="">Todos</option>' +
 					forms.map(form => '<option value="' + escapeHtml(form) + '">' + escapeHtml(form) + '</option>').join('');
+				if ([...select.options].some(option => option.value === value)) select.value = value;
 			}
 
-			function populateBranchFilter() {
+			let authorizedClients = [];
+
+			function populateBranchFilter(value = $('fg-f-sucursal').value) {
 				const select = $('fg-f-sucursal');
-				const branches = [...new Set(allTickets.map(ticket => ticket.sucursal).filter(Boolean))]
-					.sort((a, b) => a.localeCompare(b, 'es'));
-				select.innerHTML = '<option value="">Todos</option>' +
-					branches.map(branch => '<option value="' + escapeHtml(branch) + '">' + escapeHtml(branch) + '</option>').join('');
+				const client = $('fg-f-cliente').value;
+				const branches = new Set(authorizedClients
+					.filter(node => !client || node.getAttribute('id') === client)
+					.flatMap(node => [...node.children].map(branch => branch.getAttribute('nombre'))));
+				select.replaceChildren(new Option('Todas', ''), ...[...branches]
+					.sort((a, b) => a.localeCompare(b, 'es')).map(branch => new Option(branch, branch)));
+				select.value = branches.has(value) ? value : '';
+				select.disabled = !branches.size;
+			}
+
+			async function loadFilterCatalog() {
+				const client = $('fg-f-cliente');
+				$('fg-f-sucursal').disabled = true;
+				try {
+					const context = xo.xml.createDocument('<model/>');
+					const params = new URLSearchParams({
+						FROM: 'autofactura.portalTickets',
+						'@xml': '<query catalogo="filtros"/>'
+					});
+					const response = await xo.server.request.call(context, params,
+						new Headers({ Accept: 'application/xml, text/xml', 'X-Page-Index': '1', 'X-Page-Size': '50' }), { cache: 'no-store' });
+					if (!isCurrent()) return;
+					if (response?.documentElement?.localName !== 'catalogo') throw new Error('Catálogo de clientes no válido.');
+					authorizedClients = [...response.documentElement.querySelectorAll(':scope > cliente')];
+					client.replaceChildren(new Option(authorizedClients.length ? 'Todos' : 'Sin clientes autorizados', ''),
+						...authorizedClients.map(node => new Option(node.getAttribute('nombre'), node.getAttribute('id'))));
+					client.disabled = !authorizedClients.length;
+				} catch (error) {
+					if (!isCurrent()) return;
+					client.replaceChildren(new Option('No se pudieron cargar los clientes', ''));
+					console.error('Factura Global:', error?.message || error?.status || error);
+				}
 			}
 
 			function resetFilterValues() {
-				['fg-f-start', 'fg-f-end', 'fg-f-folio', 'fg-f-sucursal', 'fg-f-formapago', 'fg-f-producto', 'fg-f-pago-unico', 'fg-f-impuestos'].forEach(id => $(id).value = '');
+				['fg-f-start', 'fg-f-end', 'fg-f-folio', 'fg-f-cliente', 'fg-f-sucursal', 'fg-f-formapago', 'fg-f-producto', 'fg-f-pago-unico', 'fg-f-impuestos'].forEach(id => $(id).value = '');
 				$('fg-f-incluir-productos').checked = false;
+				populateBranchFilter('');
 				$('fg-f-estado').value = 'No facturado';
 				$('fg-f-min').value = '0.00';
 				$('fg-f-max').value = '9999.99';
@@ -759,24 +808,30 @@
 				autofactura.updateTicketFilterIndicators($('fg-sidebar'), 'fg');
 			}
 
+			let committedFilters;
+			const readFilterDraft = () => ({
+				...Object.fromEntries([...autofactura.ticketFilterNames, 'cliente'].map(name => [name, $('fg-f-' + name).value])),
+				'incluir-productos': $('fg-f-incluir-productos').checked
+			});
+
 			function applyFilters() {
 				updateFilterIndicators();
-				showLoader(true)
-				const fstart = $('fg-f-start').value;
-				const fend = $('fg-f-end').value;
-				const ffolios = $('fg-f-folio').value
+				showLoader(true);
+				const fstart = committedFilters.start;
+				const fend = committedFilters.end;
+				const ffolios = committedFilters.folio
 					.split(',')
 					.map(folio => folio.trim().toLowerCase())
 					.filter(Boolean);
-				const fsucursal = $('fg-f-sucursal').value.trim().toLowerCase();
-				const fformaPago = $('fg-f-formapago').value.trim().toLowerCase();
-				const fproductos = autofactura.parseTicketFilterTerms($('fg-f-producto').value);
-				const fpagoUnico = $('fg-f-pago-unico').value;
-				const fimpuestos = $('fg-f-impuestos').value;
-				const festado = $('fg-f-estado').value;
-				const fmin = parseFloat($('fg-f-min').value);
-				const fmax = parseFloat($('fg-f-max').value);
+				const fformaPago = committedFilters.formapago.trim().toLowerCase();
+				const fproductos = autofactura.parseTicketFilterTerms(committedFilters.producto);
+				const fpagoUnico = committedFilters['pago-unico'];
+				const fimpuestos = committedFilters.impuestos;
+				const festado = committedFilters.estado;
+				const fmin = committedFilters.min === '0.00' ? NaN : parseFloat(committedFilters.min);
+				const fmax = committedFilters.max === '9999.99' ? NaN : parseFloat(committedFilters.max);
 				filtered = allTickets.filter(t => {
+					if (t.outsideQuery) return false;
 					if (festado && t.estado !== festado) return false;
 					if (fstart && t.fecha < fstart) return false;
 					if (fend && t.fecha > fend) return false;
@@ -785,10 +840,6 @@
 					if (ffolios.length) {
 						const hay = (t.folio || '').toLowerCase();
 						if (!ffolios.some(folio => hay.includes(folio))) return false;
-					}
-					if (fsucursal) {
-						const hay = (t.sucursal || '').toLowerCase();
-						if (!hay.includes(fsucursal)) return false;
 					}
 					if (fformaPago) {
 						const hay = (t.formasPago || [t.formaPago]).some(forma => forma.toLowerCase() === fformaPago);
@@ -808,14 +859,12 @@
 					if (fimpuestos === 'ninguno' && (t.iva > 0 || t.ieps > 0)) return false;
 					return true;
 				});
-				pageIndex = 0;
 				render();
 				showLoader(false)
 			}
 
 			function pageItems() {
-				const s = pageIndex * PAGE_SIZE;
-				return filtered.slice(s, s + PAGE_SIZE);
+				return filtered;
 			}
 
 			function productMatches(item, terms) {
@@ -828,8 +877,8 @@
 				const model = ticketsStore.document;
 				const page = model.createElementNS(viewNamespace, 'state:factura-global');
 				const rows = pageItems();
-				const terms = autofactura.parseTicketFilterTerms($('fg-f-producto').value);
-				const onlyMatchingProducts = terms.length > 0 && !$('fg-f-incluir-productos').checked;
+				const terms = autofactura.parseTicketFilterTerms(committedFilters.producto);
+				const onlyMatchingProducts = terms.length > 0 && !committedFilters['incluir-productos'];
 				page.setAttribute('productos-filtrados', String(onlyMatchingProducts));
 
 				function append(parent, name, attributes) {
@@ -858,10 +907,15 @@
 					.then(() => { if (isCurrent()) fg.refreshSelection(); })
 					.catch(error => console.error('Factura Global:', error));
 
-				const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-				$('fg-page-info').textContent = `Página ${pageIndex + 1} de ${totalPages} — ${filtered.length} tickets`;
-				$('fg-btn-prev').disabled = pageIndex === 0;
-				$('fg-btn-next').disabled = pageIndex >= totalPages - 1;
+				const { index, size, total } = pageMetadata(model);
+				const totalPages = Math.max(1, Math.ceil(total / (size || PAGE_SIZE)));
+				const loaded = model.documentElement.querySelectorAll(':scope > row').length;
+				const visible = filtered.length < loaded ? ' · ' + filtered.length + ' visibles en esta página' : '';
+				const pendingFilters = xo.state.fgFiltersPending || !sameFilters(queryFilters(), appliedFilters(model.documentElement));
+				$('fg-page-info').textContent = loadingQuery ? 'Buscando tickets…' :
+					'Página ' + (index || 1) + ' de ' + totalPages + ' · ' + total + ' tickets según la consulta' + visible;
+				$('fg-btn-prev').disabled = loadingQuery || pendingFilters || index <= 1;
+				$('fg-btn-next').disabled = loadingQuery || pendingFilters || index >= totalPages;
 				updateSummary(); updateButtons();
 			}
 
@@ -1023,37 +1077,296 @@
 				}, { signal });
 			}
 
-			function bindStablePaginationEvents() {
-				document.addEventListener('click', (event) => {
-					const button = event.target.closest?.('#fg-btn-prev, #fg-btn-next');
-					if (!button || button.disabled) return;
-					const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-					if (button.id === 'fg-btn-prev' && pageIndex > 0) {
-						pageIndex--;
-						render();
-					} else if (button.id === 'fg-btn-next' && pageIndex < totalPages - 1) {
-						pageIndex++;
-						render();
+			const metaNamespace = 'http://panax.io/metadata';
+			let loadingQuery = false;
+			const queryFilters = () => ['start', 'end', 'estado', 'cliente', 'sucursal'].map(name => committedFilters[name]);
+			const appliedFilters = root => ['desde', 'hasta', 'estado', 'tenant', 'sucursal'].map(name => root.getAttribute(name) || '');
+			const sameFilters = (left, right) => left.every((value, index) => value === right[index]);
+
+			function pageMetadata(model) {
+				const root = model.documentElement;
+				const read = name => Number(root.getAttributeNS(metaNamespace, name) || root.getAttribute('meta:' + name));
+				return { index: read('pageIndex'), size: read('pageSize'), total: read('totalCount') };
+			}
+
+			async function requestTickets(index, [desde, hasta, estado, tenant, sucursal]) {
+				const query = xo.xml.createDocument('<query order_by="[@tkt]"/>').documentElement;
+				if (desde) query.setAttribute('desde', desde);
+				if (hasta) query.setAttribute('hasta', hasta);
+				if (!desde && !hasta) query.setAttribute('periodo', 'actual');
+				if (estado) query.setAttribute('estado', estado);
+				if (tenant) query.setAttribute('tenant', tenant);
+				if (sucursal) query.setAttribute('sucursal', sucursal);
+				const params = new URLSearchParams({
+					FROM: 'autofactura.portalTickets',
+					'@xml': new XMLSerializer().serializeToString(query)
+				});
+				const context = xo.xml.createDocument('<model/>');
+				const headers = new Headers({
+					Accept: 'application/xml, text/xml',
+					'X-Page-Size': String(PAGE_SIZE),
+					'X-Page-Index': String(index)
+				});
+				const response = await xo.server.request.call(context, params, headers, { cache: 'no-store' });
+				if (response?.documentElement?.localName !== 'model' ||
+					pageMetadata(response).index !== index || pageMetadata(response).size !== PAGE_SIZE) {
+					throw new Error('La consulta no devolvió la página de tickets solicitada.');
+				}
+				return response;
+			}
+
+			function replaceTickets(model, response) {
+				const root = model.documentElement;
+				const rows = [...root.querySelectorAll(':scope > row')];
+				const archive = root.querySelector(':scope > selected-tickets') || root.appendChild(model.createElement('selected-tickets'));
+				for (const row of rows) {
+					if (selected.has(row.getAttribute('id'))) archive.appendChild(row);
+					else row.remove();
+				}
+				const previousSelections = new Map([...archive.children].map(row => [row.getAttribute('id'), row]));
+				const fragment = model.createDocumentFragment();
+				for (const row of response.documentElement.querySelectorAll(':scope > row')) {
+					const id = row.getAttribute('id');
+					const imported = model.importNode(row, true);
+					const previous = previousSelections.get(id);
+					if (previous) {
+						if (selected.has(id)) imported.setAttributeNS(viewNamespace, 'state:selected', 'true');
+						previous.remove();
 					}
+					fragment.appendChild(imported);
+				}
+				if (!archive.children.length) archive.remove();
+				root.appendChild(fragment);
+				const page = pageMetadata(response);
+				root.setAttributeNS(metaNamespace, 'meta:pageIndex', page.index);
+				root.setAttributeNS(metaNamespace, 'meta:pageSize', page.size);
+				root.setAttributeNS(metaNamespace, 'meta:totalCount', page.total);
+				allTickets.splice(0, allTickets.length, ...readTickets(model));
+				populatePaymentFilter();
+			}
+
+			async function searchTickets(index = 1, force = false) {
+				if (loadingQuery) return;
+				const model = ticketsStore.document;
+				const filters = queryFilters();
+				const previous = appliedFilters(model.documentElement);
+				if (!force && index === pageMetadata(model).index && sameFilters(filters, previous)) return;
+				loadingQuery = true;
+				render();
+				try {
+					const response = await requestTickets(index, filters);
+					if (!isCurrent() || ticketsStore.document !== model || !sameFilters(filters, queryFilters())) return;
+					const effective = ['desde', 'hasta'].map((name, position) => response.documentElement.getAttribute(name) ?? filters[position]);
+					replaceTickets(model, response);
+					const modelRoot = model.documentElement;
+					modelRoot.setAttribute('desde', effective[0]);
+					modelRoot.setAttribute('hasta', effective[1]);
+					modelRoot.setAttribute('estado', filters[2]);
+					modelRoot.setAttribute('tenant', filters[3]);
+					modelRoot.setAttribute('sucursal', filters[4]);
+					[committedFilters.start, committedFilters.end] = effective;
+					if (!xo.state.fgFiltersPending) {
+						$('fg-f-start').value = effective[0];
+						$('fg-f-end').value = effective[1];
+						autofactura.captureTicketFilters($('fg-sidebar'), 'fg');
+					}
+				} catch (error) {
+					if (isCurrent() && sameFilters(filters, queryFilters())) xo.dom.alert('No se pudo consultar la página de tickets. Vuelve a intentarlo.');
+					console.error('Factura Global:', error?.message || error?.status || error);
+				} finally {
+					loadingQuery = false;
+					if (isCurrent()) {
+						const current = queryFilters();
+						const changed = !sameFilters(current, filters) && !sameFilters(current, appliedFilters(ticketsStore.document.documentElement));
+						applyFilters();
+						if (changed) searchTickets();
+					}
+				}
+			}
+
+			function bindStablePaginationEvents() {
+				document.addEventListener('click', event => {
+					const button = event.target.closest?.('#fg-btn-prev, #fg-btn-next');
+					if (!button || button.disabled || xo.state.fgFiltersPending) return;
+					const { index } = pageMetadata(ticketsStore.document);
+					searchTickets(index + (button.id === 'fg-btn-prev' ? -1 : 1));
 				}, { signal });
 			}
 
 			function bindFilterEvents(aside) {
-				aside.addEventListener('change', event => {
-					if (!event.target.matches('#fg-filter-panel input, #fg-filter-panel select')) return;
-					if (event.target.matches('#fg-f-incluir-productos')) render();
-					else applyFilters();
-				}, { signal });
-				aside.addEventListener('input', updateFilterIndicators, { signal });
-				$('fg-btn-apply').addEventListener('click', () => {
+				const button = $('fg-btn-apply');
+				const badge = button.querySelector('[data-filter-countdown]');
+				const delay = 3000;
+				let timer;
+				let lastPointerMove = -Infinity;
+
+				function stopTimer() {
+					clearTimeout(timer);
+					xo.state.fgFilterSeconds = null;
+				}
+
+				function startCountdown() {
+					if (!isCurrent() || !aside.isConnected || !xo.state.fgFiltersPending) return;
+					const deadline = performance.now() + delay;
+					function tick() {
+						if (!isCurrent() || !aside.isConnected || !xo.state.fgFiltersPending) return;
+						const remaining = deadline - performance.now();
+						xo.state.fgFilterSeconds = Math.max(0, Math.ceil(remaining / 1000));
+						if (remaining > 0) timer = setTimeout(tick, Math.min(1000, remaining));
+					}
+					tick();
+				}
+
+				fg.applyTicketFilterDraft = (force = false) => {
+					if (!isCurrent() || !aside.isConnected) return;
+					stopTimer();
+					committedFilters = readFilterDraft();
+					xo.state.fgFiltersPending = false;
 					autofactura.captureTicketFilters(aside, 'fg');
 					applyFilters();
+					const { index } = pageMetadata(ticketsStore.document);
+					const changed = !sameFilters(queryFilters(), appliedFilters(ticketsStore.document.documentElement));
+					searchTickets(changed || force ? 1 : index, force);
+				};
+
+				fg.filterCountdownChanged = seconds => {
+					if (!isCurrent() || !aside.isConnected) return;
+					badge.hidden = !(seconds > 0);
+					badge.textContent = seconds > 0 ? String(seconds) : '';
+					if (seconds === 0 && xo.state.fgFiltersPending) button.click();
+				};
+
+				fg.pressTicketFilterButton = () => {
+					if (!isCurrent() || !aside.isConnected) return;
+					if (button.classList.contains('ticket-filter-pressed')) {
+						button.classList.remove('ticket-filter-pressed');
+						void button.offsetWidth;
+					}
+					button.classList.add('ticket-filter-pressed');
+					fg.applyTicketFilterDraft();
+				};
+				button.addEventListener('animationend', event => {
+					if (event.target === button) button.classList.remove('ticket-filter-pressed');
 				}, { signal });
+
+				if (!fg.filterEventsRegistered) {
+					xo.listener.on('change::#state:fgFilterSeconds', function ({ value }) {
+						fg.filterCountdownChanged?.(value);
+					});
+					xo.listener.on('click::#fg-btn-apply', function () {
+						fg.pressTicketFilterButton?.();
+					});
+					fg.filterEventsRegistered = true;
+				}
+
+				const stageFilter = event => {
+					const control = event.target;
+					if (!control.matches('#fg-filter-panel input, #fg-filter-panel select')) return;
+					if (control.id === 'fg-f-cliente' && event.type === 'change') populateBranchFilter('');
+					updateFilterIndicators();
+					const draft = readFilterDraft();
+					xo.state.fgFiltersPending = Object.keys(draft).some(name => draft[name] !== committedFilters[name]);
+					stopTimer();
+					if (xo.state.fgFiltersPending) {
+						const idle = 200 - (performance.now() - lastPointerMove);
+						if (idle > 0) timer = setTimeout(startCountdown, idle);
+						else startCountdown();
+					}
+				};
+				aside.addEventListener('input', stageFilter, { signal });
+				aside.addEventListener('change', stageFilter, { signal });
+				aside.addEventListener('keydown', event => {
+					if (event.key !== 'Enter' || event.isComposing || event.defaultPrevented ||
+						!event.target.matches('#fg-filter-panel input:is([type="search"], [type="number"])')) return;
+					event.preventDefault();
+					if (!event.repeat) button.click();
+				}, { signal });
+				document.addEventListener('pointermove', event => {
+					if (event.pointerType !== 'mouse' || !isCurrent() || !aside.isConnected) return;
+					lastPointerMove = performance.now();
+					if (!xo.state.fgFiltersPending) return;
+					stopTimer();
+					timer = setTimeout(startCountdown, 200);
+				}, { signal, passive: true });
 				$('fg-btn-reset').addEventListener('click', () => {
 					resetFilterValues();
-					autofactura.captureTicketFilters(aside, 'fg');
-					applyFilters();
+					fg.applyTicketFilterDraft(true);
 				}, { signal });
+				signal.addEventListener('abort', stopTimer, { once: true });
+			}
+
+			async function openTicket(trigger) {
+				if (!isCurrent() || !trigger.dataset.id) return;
+				const model = ticketsStore.document;
+				const source = Array.from(model.querySelectorAll('model > row')).find(row =>
+					row.getAttribute('id')?.toLowerCase() === trigger.dataset.id.toLowerCase()
+				);
+				if (!source) {
+					xo.dom.alert('El ticket ya no está disponible en esta página. Actualiza la consulta.');
+					return;
+				}
+				const [ticket] = readTickets(model, [source]);
+				const detail = model.createElementNS(viewNamespace, 'state:ticket-detail');
+				const addAttributes = (node, attributes) => {
+					for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value ?? '');
+				};
+				const amounts = ({ subtotal, iva, ieps, total }) => ({
+					subtotal: money(subtotal), iva: money(iva), ieps: money(ieps), total: money(total)
+				});
+				const append = (name, attributes) => {
+					const element = model.createElement(name);
+					addAttributes(element, attributes);
+					detail.appendChild(element);
+				};
+				addAttributes(detail, {
+					fecha: ticket.fechaHora?.replace('T', ' ').slice(0, 19) || ticket.fecha,
+					sucursal: ticket.sucursal, estado: ticket.estado,
+					receptor: ticket.receptor.toLowerCase() === 'facturado' ? '' : ticket.receptor,
+					...amounts(ticket)
+				});
+				for (const item of ticket.items) append('item', {
+					codigo: item.codigo, descripcion: item.descripcion, cantidad: item.cantidad, unidad: item.unidad,
+					...amounts({ subtotal: item.importe, iva: item.iva, ieps: item.ieps, total: item.importe + item.iva + item.ieps })
+				});
+				for (const payment of ticket.pagos) append('payment', { forma: payment.formaPago, monto: money(payment.monto) });
+				if (!ticket.pagos.length && ticket.formaPago) append('payment', { forma: ticket.formaPago });
+				const previous = model.documentElement.getElementsByTagNameNS(viewNamespace, 'ticket-detail')[0];
+				if (previous) previous.replaceWith(detail);
+				else model.documentElement.appendChild(detail);
+
+				let dialog;
+				try {
+					const template = $('fg-ticket-dialog-template');
+					dialog = template.content.firstElementChild.cloneNode(true);
+					dialog.querySelector('#fg-ticket-dialog-title').textContent = 'Ticket ' + ticket.folio;
+					dialog.addEventListener('close', (event) => {
+						if (event.target !== dialog || dialog.open) return;
+						detail.remove();
+						dialog.remove();
+					});
+					document.body.appendChild(dialog);
+					dialog.showModal();
+					const content = dialog.querySelector('#fg-ticket-full');
+					const status = document.createElement('p');
+					status.className = 'p-3 mb-0';
+					status.setAttribute('role', 'status');
+					status.textContent = 'Cargando ticket…';
+					content.replaceChildren(status);
+					await content.render();
+				} catch (error) {
+				detail.remove();
+					dialog?.remove();
+					if (isCurrent()) xo.dom.alert('No se pudo mostrar el ticket.');
+					console.error('Factura Global:', error);
+				}
+			}
+
+			fg.openTicket = openTicket;
+			if (!fg.openTicketListenerBound) {
+				xo.listener.on('click::#fg-tbody .fg-view-ticket', function () {
+					return fg.openTicket(this);
+				});
+				fg.openTicketListenerBound = true;
 			}
 
 			function bindStableFooterEvents() {
@@ -1199,16 +1512,27 @@
 				function syncTickets(model) {
 					const tickets = readTickets(model);
 					allTickets.splice(0, allTickets.length, ...tickets);
-					populateBranchFilter();
 					populatePaymentFilter();
-					autofactura.restoreTicketFilters($('fg-sidebar'), 'fg');
+					const aside = $('fg-sidebar');
+					const [desde, hasta, , tenant, branch] = appliedFilters(model.documentElement);
+					$('fg-f-start').value = desde;
+					$('fg-f-end').value = hasta;
+					$('fg-f-cliente').value = authorizedClients.some(node => node.getAttribute('id') === tenant) ? tenant : '';
+					populateBranchFilter(branch);
+					autofactura.restoreTicketFilters(aside, 'fg');
+					committedFilters = readFilterDraft();
+					xo.state.fgFiltersPending = false;
+					xo.state.fgFilterSeconds = null;
 					applyFilters();
+					if (!sameFilters(queryFilters(), appliedFilters(model.documentElement))) searchTickets();
 				}
 
 				await ticketsStore.ready;
 				if (ticketsStore.document.documentElement?.localName !== 'model') {
 					await ticketsStore.fetch();
 				}
+				if (!isCurrent() || !filterAside.isConnected) return;
+				await loadFilterCatalog();
 				if (!isCurrent() || !filterAside.isConnected) return;
 				syncTickets(ticketsStore.document);
 				bind(filterAside);

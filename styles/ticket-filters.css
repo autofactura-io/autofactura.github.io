@@ -37,8 +37,106 @@
     border-bottom: 1px solid #dee2e6;
 }
 
+.ticket-filter-sidebar af-ticket-filters {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .ticket-filter-sidebar .offcanvas-body {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
+}
+
+.ticket-filter-group {
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+}
+
+.ticket-filter-group + .ticket-filter-group {
+    margin-top: .5rem;
+}
+
+.ticket-filter-group > summary {
+    padding: .55rem .7rem;
+    background: #f8f9fa;
+    border-radius: inherit;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.ticket-filter-group[open] > summary {
+    border-bottom: 1px solid #dee2e6;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.ticket-filter-group > summary:focus-visible {
+    outline-offset: -2px;
+}
+
+.ticket-filter-group-count {
+    margin-left: .5rem;
+    padding: .12rem .45rem;
+    border-radius: 999px;
+    background: #ffcc66;
+    color: #553300;
+    font-size: .72rem;
+}
+
+.ticket-filter-group-fields {
+    margin: 0;
+    padding: 0 .5rem .65rem;
+}
+
+.ticket-filter-actions {
+    flex: 0 0 auto;
+    padding: .75rem 1rem;
+    border-top: 1px solid #dee2e6;
+    background: #fff;
+}
+
+.ticket-filter-actions .ticket-filter-pressed {
+    animation: ticket-filter-press 320ms ease-out;
+}
+
+@keyframes ticket-filter-press {
+    0%, 100% { scale: 1; }
+    35% {
+        scale: .96;
+        background-color: var(--bs-btn-hover-bg, #0d6efd);
+        color: var(--bs-btn-hover-color, #fff);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ticket-filter-actions .ticket-filter-pressed {
+        animation-name: ticket-filter-press-feedback;
+    }
+
+    @keyframes ticket-filter-press-feedback {
+        35% {
+            background-color: var(--bs-btn-hover-bg, #0d6efd);
+            color: var(--bs-btn-hover-color, #fff);
+        }
+    }
+}
+
+.ticket-filter-countdown:not([hidden]) {
+    display: inline-grid;
+    pointer-events: none;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: .3rem;
+    border-radius: 50%;
+    background: #0d6efd;
+    color: white;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
 .ticket-date-range-trigger {

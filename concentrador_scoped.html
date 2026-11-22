@@ -1,4 +1,5 @@
-<section id="concentrador" is="excel-selection" cell-selector="td:not(.rc-message)" class="container-fluid py-3">
+<section id="page-content">
+<section id="concentrador" is="excel-selection" cell-selector="td:not(.rc-message):not(.rc-ticket-selection)" class="container-fluid py-3">
   <style>
     #concentrador { --rc-line: #dce4ed; color: #203044; }
     #concentrador .rc-header { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; }
@@ -87,7 +88,7 @@
   <div class="rc-panel" id="rc-panel-folios" role="tabpanel" aria-labelledby="rc-tab-folios" hidden>
     <div class="rc-panel-heading"><h2>Detalle por folio</h2><small id="rc-folio-heading">50 folios por página</small></div>
       <div class="rc-folio-main">
-        <div class="rc-folio-toolbar"><small id="rc-f-page-info" class="rc-muted"></small><div class="d-flex gap-2"><button id="rc-f-export" type="button" class="btn btn-primary btn-sm" disabled>Descargar CSV</button><button id="rc-f-prev" type="button" class="btn btn-outline-secondary btn-sm">Anterior</button><button id="rc-f-next" type="button" class="btn btn-outline-secondary btn-sm">Siguiente</button></div></div>
+        <div class="rc-folio-toolbar"><small id="rc-f-page-info" class="rc-muted"></small><span id="rc-ticket-selection-count" class="small"></span><button id="rc-prefactura" type="button" class="btn btn-outline-primary btn-sm" disabled>Generar pre-factura</button><div class="d-flex gap-2"><button id="rc-f-export" type="button" class="btn btn-primary btn-sm" disabled>Descargar CSV</button><button id="rc-f-prev" type="button" class="btn btn-outline-secondary btn-sm">Anterior</button><button id="rc-f-next" type="button" class="btn btn-outline-secondary btn-sm">Siguiente</button></div></div>
         <div class="rc-table-wrap"><table id="rc-folios" class="rc-folios"></table></div>
       </div>
   </div>
@@ -100,7 +101,7 @@
         prefix: 'rc', applyId: 'rc-f-apply', resetId: 'rc-f-reset',
         helpText: 'El total conserva el importe del ticket completo.'
       });
-      if (!filterAside) return;
+      if (!root.isConnected || !filterAside?.isConnected) return;
       const $ = id => root.querySelector('#' + id) || filterAside.querySelector('#' + id);
       const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
       const num = value => { const n = Number(value); return Number.isFinite(n) ? n : 0; };
@@ -365,23 +366,38 @@
         folioPage = Math.min(folioPage, totalPages - 1);
         const pageRows = folioFiltered.slice(folioPage * FOLIO_PAGE_SIZE, (folioPage + 1) * FOLIO_PAGE_SIZE);
         const headers = ['Fecha', 'Folio', 'Sucursal', 'Forma de pago', 'Estado', 'Receptor', 'Subtotal', 'IVA', 'IEPS', 'Total'];
-        const head = '<thead><tr>' + headers.concat(folioProducts.map(product => product.name)).map((title, index) => '<th' + (index >= 6 ? ' class="rc-number"' : '') + ' title="' + esc(title) + '">' + esc(title) + '</th>').join('') + '</tr></thead>';
-        const body = pageRows.map(ticket => '<tr>' +
+        const head = '<thead><tr><th class="rc-ticket-selection"><input id="rc-select-page" type="checkbox" aria-label="Seleccionar tickets visibles"></th>' + headers.concat(folioProducts.map(product => product.name)).map((title, index) => '<th' + (index >= 6 ? ' class="rc-number"' : '') + ' title="' + esc(title) + '">' + esc(title) + '</th>').join('') + '</tr></thead>';
+        const body = pageRows.map(ticket => '<tr><td class="rc-ticket-selection"><input class="rc-select-ticket" type="checkbox" data-ticket-id="' + esc(ticket.id) + '" aria-label="Seleccionar ticket ' + esc(ticket.folio) + '" ' + (autofactura.ticketSelection.has(ticket.id) ? 'checked ' : '') + (ticket.status === 'Facturado' ? 'disabled' : '') + '></td>' +
           [ticket.date, ticket.folio, ticket.branch, ticket.form || 'Sin dato', ticket.status, ticket.receptor || '—'].map(value => '<td>' + esc(value) + '</td>').join('') +
           [ticket.subtotal, ticket.iva, ticket.ieps, ticket.total].map(value => '<td class="rc-number">' + money(value) + '</td>').join('') +
           folioProducts.map(product => { const value = folioProductValue(ticket, product); return '<td class="rc-number">' + (value ? money(value) : '—') + '</td>'; }).join('') + '</tr>').join('');
         const pageTotal = totals(pageRows);
-        const foot = '<tfoot><tr><td colspan="6">Total página</td>' +
+        const foot = '<tfoot><tr><td colspan="7">Total página</td>' +
           [pageTotal.subtotal, pageTotal.iva, pageTotal.ieps, pageTotal.total].map(value => '<td class="rc-number">' + money(value) + '</td>').join('') +
           folioProducts.map(product => '<td class="rc-number">' + money(pageRows.reduce((sum, ticket) => sum + folioProductValue(ticket, product), 0)) + '</td>').join('') + '</tr></tfoot>';
-        $('rc-folios').innerHTML = head + '<tbody>' + (body || '<tr><td colspan="' + (headers.length + folioProducts.length) + '" class="rc-message">No hay tickets para estos filtros.</td></tr>') + '</tbody>' + foot;
+        $('rc-folios').innerHTML = head + '<tbody>' + (body || '<tr><td colspan="' + (headers.length + folioProducts.length + 1) + '" class="rc-message">No hay tickets para estos filtros.</td></tr>') + '</tbody>' + foot;
         $('rc-f-page-info').textContent = 'Página ' + (folioPage + 1) + ' de ' + totalPages + ' — ' + folioFiltered.length + ' tickets';
         $('rc-folio-heading').textContent = FOLIO_PAGE_SIZE + ' folios por página · ' + folioProducts.length + ' productos';
         $('rc-f-prev').disabled = folioPage === 0;
         $('rc-f-next').disabled = folioPage >= totalPages - 1;
         $('rc-f-export').disabled = folioFiltered.length === 0;
+        syncTicketSelection();
         scheduleTableViewport();
       }
+      function syncTicketSelection() {
+        if (!root.isConnected) return;
+        const selection = new Set(autofactura.ticketSelection);
+        for (const input of root.querySelectorAll('.rc-select-ticket')) input.checked = selection.has(input.dataset.ticketId);
+        const pageRows = folioFiltered.slice(folioPage * FOLIO_PAGE_SIZE, (folioPage + 1) * FOLIO_PAGE_SIZE).filter(ticket => ticket.status !== 'Facturado');
+        const all = $('rc-select-page');
+        if (all) {
+          all.disabled = !pageRows.length;
+          all.checked = pageRows.length > 0 && pageRows.every(ticket => selection.has(ticket.id));
+        }
+        $('rc-ticket-selection-count').textContent = selection.size + ' tickets seleccionados';
+        $('rc-prefactura').disabled = !selection.size;
+      }
+      autofactura.refreshConcentradorSelection = syncTicketSelection;
       function clearCellSelection() {
         if (!root.selection?.cells.size) return;
         root.clearSelection();
@@ -456,6 +472,7 @@
         $('rc-status-message').hidden = false;
         try {
           const model = await xo.stores['#facturas'].ready;
+          if (!root.isConnected || !filterAside.isConnected) return;
           tickets = sourceRows(model).map(parseTicket).filter(ticket => ticket.date);
           const branches = [...new Set(tickets.map(ticket => ticket.branch).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
           const folioBranch = $('rc-f-sucursal').value;
@@ -469,12 +486,22 @@
           applyFolioFilters();
           $('rc-status-message').hidden = true;
         } catch (error) {
+          if (!root.isConnected || !filterAside.isConnected) return;
           console.error('No se pudo cargar el concentrador', error);
           $('rc-status-message').textContent = 'No se pudieron cargar las facturas.';
         } finally { if (refreshButton) refreshButton.disabled = false; }
       }
       root.addEventListener('change', event => {
         if (event.target.matches('#rc-metric')) renderActive();
+        if (event.target.matches('.rc-select-ticket')) {
+          event.target.checked ? autofactura.ticketSelection.add(event.target.dataset.ticketId) : autofactura.ticketSelection.delete(event.target.dataset.ticketId);
+          syncTicketSelection();
+        }
+        if (event.target.matches('#rc-select-page')) {
+          const pageRows = folioFiltered.slice(folioPage * FOLIO_PAGE_SIZE, (folioPage + 1) * FOLIO_PAGE_SIZE).filter(ticket => ticket.status !== 'Facturado');
+          autofactura.ticketSelection.setMany(pageRows.map(ticket => ticket.id), event.target.checked);
+          syncTicketSelection();
+        }
       });
       filterAside.addEventListener('change', event => applyFolioFilters(event.target.matches('#rc-f-incluir-productos')));
       filterAside.addEventListener('input', () => autofactura.updateTicketFilterIndicators(filterAside, 'rc'));
@@ -494,6 +521,7 @@
         if (event.target.closest('#rc-f-next') && folioPage < Math.ceil(folioFiltered.length / FOLIO_PAGE_SIZE) - 1) { folioPage++; renderFolios(); }
         if (event.target.closest('#rc-f-export') && folioFiltered.length) exportFolios();
         if (event.target.closest('#rc-refresh')) load();
+        if (event.target.closest('#rc-prefactura')) autofactura.prefactura.open({});
       });
       root.dataset.view = activeView;
       autofactura.updateTicketFilterIndicators(filterAside, 'rc');
@@ -508,4 +536,6 @@
       }).catch(error => console.error('No se pudo inicializar la selección de celdas', error));
     })();
   </script>
+</section>
+
 </section>

@@ -1,6 +1,6 @@
 (function () {
     const namespace = 'http://panax.io/state';
-    const rows = () => [...(xover.stores['#facturas'].document?.querySelectorAll('model > row') || [])];
+    const rows = () => [...(xover.stores['#facturas'].document?.querySelectorAll('model > row, model > selected-tickets > row') || [])];
     const isSelected = row => ['true', '1'].includes(row.getAttributeNS(namespace, 'selected'));
     const find = id => rows().find(row => row.getAttribute('id') === String(id));
     // This is a view of XML state, not a separate collection of selected IDs.

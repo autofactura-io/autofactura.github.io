@@ -6,12 +6,7 @@ xmlns:state="http://panax.io/state"
 xmlns:source="http://panax.io/xover/binding/source"
 xmlns:xlink="http://www.w3.org/1999/xlink"
 >
-	<xsl:include href="widgets/shell/shell.xslt"/>
-
-	<xsl:template match="/">
-		<script src="/widgets/shell/shell.js"/>
-		<xsl:apply-templates mode="shell:widget"/>
-	</xsl:template>
+	<xsl:include href="widgets/shell/shell.xslt?v=6073228"/>
 
 	<xsl:attribute-set name="shell:logo">
 		<xsl:attribute name="src">assets/logotype.png</xsl:attribute>

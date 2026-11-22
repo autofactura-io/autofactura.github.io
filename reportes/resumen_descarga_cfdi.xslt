@@ -301,7 +301,7 @@
 								<xsl:with-param name="estatus" select="@EstatusConsulta"/>
 							</xsl:call-template>
 						</xsl:attribute>
-						<xsl:value-of select="@EstatusConsulta"/>
+						<xsl:apply-templates select="@EstatusConsulta" mode="etiquetaEstatus"/>
 					</td>
 					<td style="&celda; text-align:right;">
 						<xsl:value-of select="@Comprobantes"/>
@@ -459,7 +459,7 @@
 					<xsl:text> — </xsl:text>
 					<xsl:value-of select="@FechaConsultada"/>
 					<xsl:text> — </xsl:text>
-					<xsl:value-of select="@EstatusConsulta"/>
+					<xsl:apply-templates select="@EstatusConsulta" mode="etiquetaEstatus"/>
 					<xsl:text> — CFDI SAT: </xsl:text>
 					<xsl:value-of select="@Comprobantes"/>
 					<xsl:text>, procesados: </xsl:text>
@@ -688,6 +688,15 @@
 				<xsl:value-of select="format-number(number($value), '$#,##0.00', 'money')"/>
 			</xsl:when>
 			<xsl:otherwise>-</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
+
+	<xsl:template match="@EstatusConsulta" mode="etiquetaEstatus">
+		<xsl:choose>
+			<xsl:when test=".='SinInformacion'">Sin información</xsl:when>
+			<xsl:when test=".='EnProceso'">En proceso</xsl:when>
+			<xsl:when test=".='Revision'">Revisión</xsl:when>
+			<xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
 

@@ -18,6 +18,7 @@
 	 </div>
 </div>-->
 <!-- ====== MÓDULO: Factura global (dentro de <main class="scroll">) ====== -->
+<section id="page-content">
 <section id="factura-global" class="fg">
 
 	<style>
@@ -458,6 +459,7 @@
 										<div><strong>IEPS:</strong> <span id="fg-sum-ieps">$0.00</span></div>
 										<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
 										<button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled>Facturar selección</button>
+										<button id="fg-btn-prefactura" class="btn btn-outline-primary btn-sm" disabled>Generar pre-factura</button>
 									</div>
 								</div>
 							</div>
@@ -660,15 +662,16 @@
 		}
 		//const autofactura = {};
 		(function () {
+			const root = document.getElementById('factura-global');
+			const isCurrent = () => root?.isConnected && document.getElementById('factura-global') === root;
 			const PAGE_SIZE = 50;
 			const fg = autofactura.fg;
 
 			fg.allTickets = [];
 			fg.filtered = [];
 			fg.pageIndex = 0;
-			/* Conservar la misma instancia permite que los listeners Xover ya
-			   registrados sigan actualizando la selección durante hotreload. */
-			if (!(fg.selected instanceof Set)) fg.selected = new Set();
+			// Selection lives on #facturas rows as state:selected.
+			fg.selected = autofactura.ticketSelection;
 			fg.invoiceInProgress = false;
 			if (!('pendingStatusTicketId' in fg)) fg.pendingStatusTicketId = null;
 			if (!('pendingStatusAction' in fg)) fg.pendingStatusAction = null;
@@ -716,6 +719,7 @@
 
 			async function seed() {
 				let model = await xo.stores["#facturas"].ready;
+				if (!isCurrent()) return;
 				for (let row of model.select(`model/row`)) {
 					const i = row.getAttribute("id");
 					const d = row.getAttribute("dt").parseDate();
@@ -726,6 +730,11 @@
 					const items = [...itemNodes].map((item, itemIndex) => ({
 						xoId: sourceXoId(item, 'item_' + i + '_' + itemIndex),
 						codigo: item.getAttribute('codigo') || '',
+						cantidad: attrNumber(item, ['cantidad', 'quantity'], 0),
+						base: attrNumber(item, ['base', 'subtotal'], NaN),
+						unidad: item.getAttribute('unidad') || '',
+						claveUnidad: item.getAttribute('clave_unidad') || '',
+						claveProducto: item.getAttribute('clave_producto_servicio') || item.getAttribute('clave_sat') || '',
 						descripcion: item.getAttribute('descripcion') || '',
 						precioArticulo: roundMoney(item.getAttribute('precio_articulo')),
 						precioExtras: roundMoney(item.getAttribute('precio_extras')),
@@ -965,6 +974,8 @@
 				const invoiceButton = $('fg-btn-invoice');
 				if (clearButton) clearButton.disabled = !has;
 				if (invoiceButton) invoiceButton.disabled = !has;
+				const preinvoiceButton = $('fg-btn-prefactura');
+				if (preinvoiceButton) preinvoiceButton.disabled = !has;
 			}
 
 			function attachShellFooter() {
@@ -1080,9 +1091,9 @@
 					const input = event.target;
 					if (input.matches?.('#factura-global #fg-chk-all')) {
 						if (input.checked) {
-							for (const row of pageItems()) if (row.estado === 'No facturado') selected.add(row.id);
+							selected.setMany(pageItems().filter(row => row.estado === 'No facturado').map(row => row.id), true);
 						} else {
-							for (const row of pageItems()) selected.delete(row.id);
+							selected.setMany(pageItems().map(row => row.id), false);
 						}
 						render();
 						return;
@@ -1176,26 +1187,29 @@
 						return;
 					}
 					const button = event.target.closest?.(
-						'#fg-btn-select-visible, #fg-btn-select-all, #fg-btn-unselect-visible, #fg-btn-unselect-all, #fg-btn-clear, #fg-btn-invoice'
+						'#fg-btn-select-visible, #fg-btn-select-all, #fg-btn-unselect-visible, #fg-btn-unselect-all, #fg-btn-clear, #fg-btn-invoice, #fg-btn-prefactura'
 					);
 					if (!button) return;
 					event.preventDefault();
 
 					switch (button.id) {
+						case 'fg-btn-prefactura':
+							autofactura.prefactura.open(autofactura.fg.getInvoiceContext());
+							break;
 						case 'fg-btn-select-visible':
-						for (const row of pageItems()) if (row.estado === 'No facturado') selected.add(row.id);
+						selected.setMany(pageItems().filter(row => row.estado === 'No facturado').map(row => row.id), true);
 							render();
 							break;
 						case 'fg-btn-select-all':
-							for (const row of filtered) if (row.estado === 'No facturado') selected.add(row.id);
+							selected.setMany(filtered.filter(row => row.estado === 'No facturado').map(row => row.id), true);
 							render();
 							break;
 						case 'fg-btn-unselect-visible':
-							for (const row of pageItems()) selected.delete(row.id);
+							selected.setMany(pageItems().map(row => row.id), false);
 							render();
 							break;
 						case 'fg-btn-unselect-all':
-							for (const row of filtered) selected.delete(row.id);
+							selected.setMany(filtered.map(row => row.id), false);
 							render();
 							break;
 						case 'fg-btn-clear':
@@ -1251,6 +1265,14 @@
 			}
 
 			Object.assign(fg, {
+				refreshSelection: () => {
+					if (!isCurrent()) return;
+					for (const input of document.querySelectorAll('#factura-global .fg-row')) input.checked = selected.has(input.dataset.id);
+					const selectAll = $('fg-chk-all');
+					const rows = pageItems().filter(row => row.estado === 'No facturado');
+					if (selectAll) selectAll.checked = rows.length > 0 && rows.every(row => selected.has(row.id));
+					updateSummary(); updateButtons();
+				},
 				showLoader,
 				applyFilters,
 				buildInvoiceXml,
@@ -1266,7 +1288,8 @@
 					filteredTickets: filtered,
 					allTickets,
 					totals: selectedTotals(),
-					receptor: document.getElementById('fg-cfdi-rfc')?.value?.trim() || ''
+					receptor: document.getElementById('fg-cfdi-rfc')?.value?.trim() || '',
+					cfdi: Object.fromEntries(['uso', 'metodo', 'forma'].map(key => [key, document.getElementById('fg-cfdi-' + key)?.selectedOptions[0]?.textContent?.trim() || '']))
 				})
 			});
 			if (!fg.clearSelectionListenerBound) {
@@ -1277,12 +1300,14 @@
 			// bootstrap del módulo
 			(async function init() {
 				showLoader(true);
-				await fgFiltersReady;
-				if (!document.getElementById('factura-global')) return;
+				const filterAside = await fgFiltersReady;
+				if (!isCurrent() || !filterAside?.isConnected) return;
 				moveConfirmModalToBody();
 				attachShellFooter();
 				attachHeaderPagination();
-				await seed(); populateBranchFilter(); populatePaymentFilter(); autofactura.restoreTicketFilters($('fg-sidebar'), 'fg'); applyFilters(); attachShellFooter(); attachHeaderPagination(); bind();
+				await seed();
+				if (!isCurrent() || !filterAside.isConnected) return;
+				populateBranchFilter(); populatePaymentFilter(); autofactura.restoreTicketFilters($('fg-sidebar'), 'fg'); applyFilters(); attachShellFooter(); attachHeaderPagination(); bind();
 				const toolbar = document.querySelector('#factura-global .toolbar');
 				if (window.ResizeObserver) new ResizeObserver(updateStickyHeaderOffset).observe(toolbar);
 				window.addEventListener('resize', updateStickyHeaderOffset);
@@ -1347,4 +1372,6 @@
 			</div>
 		</div>
 	</div>
+</section>
+
 </section>

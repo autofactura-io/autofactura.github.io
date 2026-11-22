@@ -1,3 +1,3 @@
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-    <xsl:import href="/widgets/shell/shell.xslt"/>
+    <xsl:import href="/widgets/shell/shell.xslt?v=6073228"/>
 </xsl:stylesheet>

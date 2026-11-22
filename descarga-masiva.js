@@ -1,3 +1,10 @@
+let rutaPendienteAutofactura;
+let montajeAutofactura;
+
+function sesionAutofacturaAutorizada() {
+    return xo.session.status === 'authorized' && Boolean(xo.session.authorization);
+}
+
 function rutaInicialAutofactura() {
     if (String(xo.session.user_login || '').trim().toLowerCase() === 'mayorga') {
         return '#resumen_descarga_cfdi';
@@ -5,24 +12,70 @@ function rutaInicialAutofactura() {
     return '#factura_global';
 }
 
-function elegirRutaAutofactura() {
-    const initial = rutaInicialAutofactura();
-    const current = location.hash;
-    return initial === '#resumen_descarga_cfdi' || !current || current === '#login' ? initial : current;
+function esRutaAutofactura(hash) {
+    return Boolean(hash && hash !== '#' && hash !== '#login');
 }
 
-async function iniciarAutofactura() {
-    if (!xo.session.authorization) return;
+function fijarRutaAutofactura(ruta) {
+    history.replaceState({ ...history.state, seed: ruta, active: ruta }, '', ruta);
+}
 
-    const route = elegirRutaAutofactura();
-    const navigate = location.hash !== route;
-    xo.site.seed = route;
-    if (!document.querySelector('#shell main')) await xo.stores['#shell'].render();
-    if (navigate) location.hash = route;
-
-    if (route === '#resumen_descarga_cfdi') {
-        return xo.stores[route].render();
+function alternarSuperficieAutofactura(autorizada) {
+    document.documentElement.setAttribute('data-autofactura-authorized', String(autorizada));
+    const body = document.body;
+    if (!body) return;
+    for (const [id, hidden] of [['autofactura-app', !autorizada], ['autofactura-access', autorizada]]) {
+        let destino = document.getElementById(id);
+        if (!destino) {
+            destino = document.createElement('div');
+            destino.id = id;
+            body.appendChild(destino);
+        }
+        destino.hidden = hidden;
     }
+}
+
+function prepararRutaDeAccesoAutofactura() {
+    if (esRutaAutofactura(location.hash)) rutaPendienteAutofactura = location.hash;
+    fijarRutaAutofactura('#login');
+}
+
+function prepararAccesoAutofactura() {
+    prepararRutaDeAccesoAutofactura();
+    alternarSuperficieAutofactura(false);
+    document.getElementById('shell')?.remove();
+}
+
+function elegirRutaAutofactura() {
+    const inicio = rutaInicialAutofactura();
+    const puedeRestaurar = ruta => {
+        const tag = ruta?.split('?')[0];
+        return tag !== '#resumen_descarga_cfdi'
+            && xo.manifest.settings[tag]?.target === '@#shell main';
+    };
+    return inicio === '#resumen_descarga_cfdi' ? inicio
+        : [location.hash, rutaPendienteAutofactura].find(puedeRestaurar) || inicio;
+}
+
+function iniciarAutofactura() {
+    montajeAutofactura ??= montarAutofactura().finally(() => { montajeAutofactura = undefined; });
+    return montajeAutofactura;
+}
+
+async function montarAutofactura() {
+    if (!document.body && document.readyState === 'loading') {
+        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+    }
+    if (!sesionAutofacturaAutorizada()) return;
+
+    const ruta = elegirRutaAutofactura();
+    rutaPendienteAutofactura = undefined;
+    const montarShell = document.getElementById('autofactura-app')?.hidden || !document.querySelector('#shell main');
+    fijarRutaAutofactura(ruta);
+    alternarSuperficieAutofactura(true);
+    if (montarShell) await xo.stores['#shell'].render();
+    if (!sesionAutofacturaAutorizada()) return mostrarAccesoAutofactura();
+    if (location.hash === ruta) return xo.stores[ruta].render();
 }
 
 
@@ -48,36 +101,35 @@ async function iniciarSesionAutofactura(form) {
     }
 }
 
-xo.listener.on('login', function () {
-    if (xo.session.authorization) xo.site.seed = elegirRutaAutofactura();
-    // Load the report after XOver completes the login transition.
-    setTimeout(() => iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name)), 0);
-});
 async function mostrarAccesoAutofactura() {
-    xo.site.seed = '#login';
-    if (location.hash !== '#login') location.hash = '#login';
+    prepararAccesoAutofactura();
     await xo.stores['#login'].render();
 }
 
+xo.listener.on('beforeRender::#shell', function ({ event }) {
+    if (!sesionAutofacturaAutorizada()) event.preventDefault();
+});
+xo.listener.on('beforeRender::#login', function () {
+    prepararAccesoAutofactura();
+});
 xo.listener.on('xover-initializing', function () {
-    // La primera transformación necesita una ruta y un shell antes de resolver su destino.
-    if (!xo.session.authorization) {
-        xo.site.seed = '#login';
-        if (location.hash !== '#login') location.hash = '#login';
+    if (!sesionAutofacturaAutorizada()) {
+        prepararRutaDeAccesoAutofactura();
         return;
     }
-    const route = elegirRutaAutofactura();
-    xo.site.seed = route;
-    if (location.hash !== route) location.hash = route;
-    if (!document.querySelector('#shell main')) {
-        xo.stores['#shell'].render().catch(error => console.error('Autofactura:', error?.status || error?.name));
-    }
+    fijarRutaAutofactura(elegirRutaAutofactura());
+    iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name));
+});
+xo.listener.on('xover-initialized', function () {
+    const mount = sesionAutofacturaAutorizada() ? iniciarAutofactura : mostrarAccesoAutofactura;
+    return mount().catch(error => console.error('Autofactura:', error?.status || error?.name));
+});
+xo.listener.on('login', function () {
+    // XOver actualiza la autorización de Basic al terminar el evento de login.
+    setTimeout(() => iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name)), 0);
 });
 xo.listener.on('logout', mostrarAccesoAutofactura);
-xo.listener.on('xover-initialized', async function () {
-    if (!xo.session.authorization) return mostrarAccesoAutofactura();
-    await iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name));
-});
+
 
 function mostrarDetalleSolicitud(solicitudId) {
     const detail = document.getElementById(solicitudId);

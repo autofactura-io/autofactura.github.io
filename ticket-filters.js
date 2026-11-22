@@ -1,4 +1,4 @@
-autofactura.ticketFiltersTemplate = autofactura.ticketFiltersTemplate || fetch('autofactura/components/ticket-filters.xhtml').then(async response => {
+autofactura.ticketFiltersTemplate = autofactura.ticketFiltersTemplate || fetch('autofactura/components/ticket-filters.xhtml?v=5').then(async response => {
     if (!response.ok) throw new Error('No se pudo cargar el componente de filtros');
     const html = await response.text();
     const document = new DOMParser().parseFromString(html, 'text/html');
@@ -71,6 +71,7 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
         aside.remove();
         return null;
     }
+    if (prefix !== 'fg') aside.querySelector('[data-filter-key="client"]')?.remove();
     const calendarModal = component.calendarModal;
     document.body.appendChild(calendarModal);
     const toggle = document.createElement('button');
@@ -139,8 +140,10 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
     const remember = event => {
         if (event.target.matches('input, select')) autofactura.captureTicketFilters(aside, prefix);
     };
-    aside.addEventListener('input', remember);
-    aside.addEventListener('change', remember);
+    if (prefix !== 'fg') {
+        aside.addEventListener('input', remember);
+        aside.addEventListener('change', remember);
+    }
     autofactura.updateTicketDateRangeLabel(aside, prefix);
     return aside;
 };
@@ -184,6 +187,7 @@ autofactura.updateTicketFilterIndicators = function updateTicketFilterIndicators
     const active = {
         date: Boolean(value('start') || value('end')),
         folio: Boolean(value('folio').trim()),
+        client: Boolean(value('cliente')),
         branch: Boolean(value('sucursal')),
         payment: Boolean(value('formapago')),
         amount: (value('min') !== '' && Number(value('min')) !== 0) || (value('max') !== '' && Number(value('max')) !== 9999.99),
@@ -196,6 +200,12 @@ autofactura.updateTicketFilterIndicators = function updateTicketFilterIndicators
     for (const [key, isActive] of Object.entries(active)) {
         root.querySelector(`[data-filter-key="${key}"]`)?.classList.toggle('is-active', isActive);
         if (isActive) count++;
+    }
+    for (const group of root.querySelectorAll('.ticket-filter-group')) {
+        const groupCount = group.querySelectorAll('.ticket-filter-field.is-active').length;
+        const indicator = group.querySelector(':scope > summary > .ticket-filter-group-count');
+        indicator.hidden = !groupCount;
+        indicator.textContent = groupCount ? groupCount + (groupCount === 1 ? ' activo' : ' activos') : '';
     }
     const badge = root.querySelector(`#${prefix}-active-filter-count`);
     badge.hidden = count === 0;

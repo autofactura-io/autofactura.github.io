@@ -62,7 +62,11 @@
                 </input>
             </td>
             <td><xsl:value-of select="@fecha"/></td>
-            <td class="cursor-pointer text-primary text-decoration-underline" data-id="{@id}" title="Ver detalle"><xsl:value-of select="$source/@tkt"/></td>
+            <td>
+                <button type="button" class="btn btn-link btn-sm p-0 fg-view-ticket" data-id="{@id}" title="Ver ticket" aria-label="Ver ticket {$source/@tkt}">
+                    <xsl:value-of select="$source/@tkt"/>
+                </button>
+            </td>
             <td><xsl:value-of select="$source/@suc"/></td>
             <td>
                 <xsl:choose>

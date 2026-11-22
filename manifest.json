@@ -27,7 +27,7 @@
 		"#login": "login.xml",
 		"#loading": true,
 		"#settings": "settings.xml",
-		"px-daterange": "autofactura/components/daterange.xhtml?v=20261119.3",
+		"px-daterange": "widgets/daterange.xhtml?v=6073228",
 		"px-combobox": "widgets/combobox.xhtml",
 		"px-printer": "widgets/printer.xhtml",
 		"px-to-excel": "widgets/excel_button.xhtml",
@@ -49,8 +49,10 @@
 		"value-filter": "widgets/value-filter.xhtml",
 		"#facturas": {
 			"server:request": {
-				"FROM": "autofactura.tickets",
-				"^X-ORDER-BY": "[@tkt]"
+				"FROM": "autofactura.portalTickets",
+				"^X-PAGE-SIZE": "50",
+				"^X-PAGE-INDEX": "1",
+				"@xml": "<query periodo=\"actual\" order_by=\"[@tkt]\" />"
 			}
 		},
 		"#tax_rules": {
@@ -101,12 +103,8 @@
 		"#server:login": { "resumable": false, "rejectCodes": 400, "authentication": false, "cache": "no-store" },
 		"#server:logout": { "resumable": false, "authentication": false, "cache": "no-store", "headers": { "Accept": "application/json" } },
 		"#facturas": {
-			"headers": {
-				"x-root-node": "model",
-				"x-row-node": "row",
-				"x-xml-mode": "PATH",
-				"x-page-size": "10000"
-			}
+			"cache": "no-store",
+			"headers": { "Accept": "application/xml, text/xml" }
 		},
 		"#tax_rules": {
 			"headers": {
