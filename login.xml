@@ -1,1 +1,1 @@
-<?xml-stylesheet type="text/xsl" href="login.xslt" role="login" target="#autofactura-access:not(:has(.login)),#autofactura-access .login"?><xo:login xmlns:xo="http://panax.io/xover"/>
+<?xml-stylesheet type="text/xsl" href="login.xslt?v=20261122_5" role="login" target="#autofactura-login-view"?><xo:login xmlns:xo="http://panax.io/xover"/>

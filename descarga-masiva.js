@@ -16,8 +16,10 @@ function esRutaAutofactura(hash) {
     return Boolean(hash && hash !== '#' && hash !== '#login');
 }
 
-function fijarRutaAutofactura(ruta) {
-    history.replaceState({ ...history.state, seed: ruta, active: ruta }, '', ruta);
+function fijarRutaAutofactura(ruta, entradaPredeterminada = false) {
+    const url = entradaPredeterminada ? location.pathname + location.search : ruta;
+    const seed = entradaPredeterminada ? '#' : ruta;
+    history.replaceState({ ...history.state, seed, active: ruta }, '', url);
 }
 
 function alternarSuperficieAutofactura(autorizada) {
@@ -32,12 +34,17 @@ function alternarSuperficieAutofactura(autorizada) {
             body.appendChild(destino);
         }
         destino.hidden = hidden;
+        if (id === 'autofactura-access' && !destino.querySelector('#autofactura-login-view')) {
+            const view = document.createElement('section');
+            view.id = 'autofactura-login-view';
+            destino.appendChild(view);
+        }
     }
 }
 
 function prepararRutaDeAccesoAutofactura() {
     if (esRutaAutofactura(location.hash)) rutaPendienteAutofactura = location.hash;
-    fijarRutaAutofactura('#login');
+    fijarRutaAutofactura('#', true);
 }
 
 function prepararAccesoAutofactura() {
@@ -68,14 +75,15 @@ async function montarAutofactura() {
     }
     if (!sesionAutofacturaAutorizada()) return;
 
+    const entradaPredeterminada = !esRutaAutofactura(location.hash) && !rutaPendienteAutofactura;
     const ruta = elegirRutaAutofactura();
     rutaPendienteAutofactura = undefined;
     const montarShell = document.getElementById('autofactura-app')?.hidden || !document.querySelector('#shell main');
-    fijarRutaAutofactura(ruta);
+    fijarRutaAutofactura(ruta, entradaPredeterminada);
     alternarSuperficieAutofactura(true);
     if (montarShell) await xo.stores['#shell'].render();
     if (!sesionAutofacturaAutorizada()) return mostrarAccesoAutofactura();
-    if (location.hash === ruta) return xo.stores[ruta].render();
+    if (location.hash === (entradaPredeterminada ? '' : ruta)) return xo.stores[ruta].render();
 }
 
 
@@ -117,7 +125,6 @@ xo.listener.on('xover-initializing', function () {
         prepararRutaDeAccesoAutofactura();
         return;
     }
-    fijarRutaAutofactura(elegirRutaAutofactura());
     iniciarAutofactura().catch(error => console.error('Autofactura:', error?.status || error?.name));
 });
 xo.listener.on('xover-initialized', function () {

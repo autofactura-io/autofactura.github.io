@@ -10,7 +10,7 @@
     <xsl:import href="widgets/login.xslt"/>
     <xsl:param name="session:login_error"/>
     <xsl:template match="*" mode="login:widget" priority="10">
-        <section class="login autofactura-login">
+        <section id="autofactura-login-view" class="login autofactura-login">
             <style><![CDATA[
 .login.autofactura-login { width: 100%; max-width: none; margin: 0; min-height: 100dvh; padding: clamp(1rem,5vh,3rem) 1rem; display: grid; justify-items: center; align-items: end; background: #eef3f8 url(assets/background.jpg) center / cover no-repeat; }
 .autofactura-login .login-card { width: min(100%,23rem); padding: clamp(1.25rem,4vw,2rem); background: #fff; color: #263b4e; border-radius: .75rem; box-shadow: 0 .65rem 2rem rgba(25,56,85,.16); }
