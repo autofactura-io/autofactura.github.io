@@ -122,12 +122,17 @@
     });
     xo.listener.on(fields.map(name => 'change::@' + name), function () {
         const draft = this.ownerElement;
-        if (draft?.localName !== 'filtros' || !storeFor(draft.parentNode)) return;
+        const store = draft?.localName === 'filtros' && storeFor(draft.parentNode);
+        if (!store) return;
         this.inert = true;
         if (this.localName === 'tenant') draft.setAttribute('sucursal', '');
         else if (this.localName !== 'informe') return;
         const form = document.getElementById('portal-operacion-filtros');
-        if (form?.scope === draft) void form.closest('.portal-filter-outlet').render();
+        if (form?.scope === draft) {
+            const outlet = form.closest('.portal-filter-outlet[xo-stylesheet]');
+            if (outlet) void outlet.render();
+            else void store.render();
+        }
     });
     xo.listener.on('failure', function ({ request, response, statusCodes }) {
         if (response?.status === 404 && reportRequests.has(request?.target)) statusCodes.ignored.push(404);
