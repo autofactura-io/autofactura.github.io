@@ -53,7 +53,7 @@
                 if (catalog?.localName !== 'catalogo') throw new Error('Catálogo no disponible.');
                 root.appendChild(model.importNode(catalog, true));
                 const companies = catalog.querySelectorAll('cliente');
-                if (isVentas && !filters.tenant && companies.length === 1 && companies[0].getAttribute('id') === 'historica') {
+                if (isVentas && !filters.tenant && [...companies].some(company => company.getAttribute('id') === 'historica')) {
                     filters = { ...filters, tenant: 'historica' };
                     if (!draft.getAttribute('tenant')) draft.setAttribute('tenant', 'historica');
                 }

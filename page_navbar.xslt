@@ -91,7 +91,7 @@ exclude-result-prefixes="session"
 					<xsl:when test="reporte/filtros">
 						<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
 							<autofactura-filters id="portal-{reporte/@modulo}-filters" prefix="portal-{reporte/@modulo}">
-								<div class="portal-filter-outlet" xo-source="active" xo-stylesheet="/reportes/portal_operacion_nav.xslt?v=20261125_6"/>
+								<div class="portal-filter-outlet" xo-source="active" xo-stylesheet="/reportes/portal_operacion_nav.xslt?v=20261125_7"/>
 							</autofactura-filters>
 						</xsl:if>
 					</xsl:when>
