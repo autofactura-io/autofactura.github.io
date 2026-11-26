@@ -108,12 +108,23 @@
     // A cached report template may still request initialization explicitly.
     autofactura.operacion = { mount: loadReport };
     xo.listener.on('render', loadReport);
-    xo.listener.on('portal:consultar', function ({ target }) {
-        const root = target.scope?.ownerDocument?.documentElement;
+    document.addEventListener('submit', function (event) {
+        const form = event.target;
+        if (!form.matches('#portal-operacion-filtros')) return;
+        event.preventDefault();
+
+        const active = xo.stores.active;
+        const root = active?.document?.documentElement;
         const store = storeFor(root);
         const draft = root?.querySelector('filtros');
-        if (store && draft) return search(store, 1, readFilters(draft));
-    });
+        if (!store || !draft || pending.has(store)) return;
+
+        const submitted = new FormData(form);
+        for (const name of fields) {
+            if (submitted.has(name)) draft.setAttribute(name, String(submitted.get(name)).trim());
+        }
+        void search(store, 1, readFilters(draft));
+    }, true);
     xo.listener.on('portal:pagina', function ({ target }) {
         const root = target.closest('#portal-operacion')?.scope;
         const store = storeFor(root);

@@ -8,7 +8,7 @@
     </xsl:template>
 
     <xsl:template match="reporte/filtros" mode="portal:filters">
-        <form id="portal-operacion-filtros" class="portal-filter-form" onsubmit="event.preventDefault(); this.dispatch('portal:consultar');">
+        <form id="portal-operacion-filtros" class="portal-filter-form">
             <div class="offcanvas-body">
             <details class="ticket-filter-group" open="open">
                 <summary>Empresa y sucursal</summary>

@@ -20,7 +20,7 @@ exclude-result-prefixes="session portal"
 	<xsl:import href="common.xslt"/>
 	<xsl:import href="~/widgets/page_navbar.xslt"/>
 	<xsl:import href="widgets/combobox.xslt"/>
-	<xsl:import href="/reportes/portal_operacion_nav.xslt?v=20261125_8"/>
+	<xsl:import href="/reportes/portal_operacion_nav.xslt?v=20261125_9"/>
 
 	<xsl:param name="session:user_login"/>
 
