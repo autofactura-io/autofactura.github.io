@@ -1,19 +1,4 @@
-<script>
-  (() => {
-    let activeStore;
-    xover.listener.on('beforeRender', function ({ store, document }) {
-      if (!store || store !== xo.stores.active || document !== store.document || store === activeStore) return;
-      activeStore = store;
-      xo.state.showFilters = document.documentElement?.getAttributeNS(xo.spaces.state, 'showFilters') === 'true';
-    });
-    xover.listener.on('change::#state:showFilters', function ({ value }) {
-      for (const panel of document.querySelectorAll('autofactura-filters')) {
-        panel.setFiltersOpen?.(value === true);
-      }
-    });
-  })();
-</script>
-<template prefix="autofactura">
+<template prefix="autofactura" value="">
   <script>
     constructor.extend({
       init() {
@@ -32,22 +17,40 @@
         if (!this.filtersBound) {
           this.filtersBound = true;
           this.addEventListener('click', event => {
-            if (event.target.closest('[part="toggle"]')) this.requestFiltersOpen(xo.state.showFilters !== true);
+            if (event.target.closest('[part="toggle"]')) this.requestFiltersOpen(!this.filtersOpen);
             else if (event.target.closest('[part="close"], [part="backdrop"]')) this.requestFiltersOpen(false);
           });
           this.addEventListener('keydown', event => {
-            if (event.key !== 'Escape' || xo.state.showFilters !== true) return;
+            if (event.key !== 'Escape' || !this.filtersOpen) return;
             event.preventDefault();
             this.requestFiltersOpen(false);
           });
         }
-        this.setFiltersOpen(xo.state.showFilters === true);
+        this.syncFiltersOpen();
+      },
+      change() {
+        this.syncFiltersOpen();
+      },
+      syncFiltersOpen(open) {
+        if (!this.isConnected) return;
+        const directive = this.getAttribute('value')?.trim().toLowerCase() || '';
+        const state = this.store?.state;
+        const key = `autofactura-filters:${this.getAttribute('prefix')}`;
+        const previous = state?.[key] ?? this.filterState;
+        const suggested = directive === 'true' || directive === 'open';
+        const current = { directive, open: open ?? (previous?.directive === directive ? previous.open : suggested) };
+        if (previous?.directive !== directive || previous?.open !== current.open) {
+          if (state) state[key] = current;
+          else this.filterState = current;
+        }
+        this.setFiltersOpen(current.open);
       },
       requestFiltersOpen(open) {
-        xo.state.showFilters = open;
+        this.syncFiltersOpen(open);
         this.querySelector(open ? '[part="close"]' : '[part="toggle"]')?.focus();
       },
       setFiltersOpen(open) {
+        this.filtersOpen = open;
         const panel = this.querySelector('[part="panel"]');
         const toggle = this.querySelector('[part="toggle"]');
         if (!panel || !toggle) return;

@@ -2,14 +2,17 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns="http://www.w3.org/1999/xhtml">
 <xsl:template match="/factura-global">
+<xsl:variable name="cliente" select="@modo='cliente'"/>
 <section id="page-content">
-<section id="factura-global" class="fg">
+<section id="factura-global" class="fg" data-modo="{@modo}">
 
 	<style>
 		#shell &gt; footer:has(.fg-summary-row) {
 			display: flex !important;
 			align-items: center !important;
 		}
+
+		#factura-global[data-modo="cliente"] #fg-chk-all { display: none; }
 
 		.fg-summary-row div {
 			align-self: center;
@@ -416,14 +419,14 @@
 	<!-- Filtros, tabla y paginación -->
 	<div class="fg-content">
 		<div class="fg-layout">
-			<span id="fg-filter-anchor" hidden=""/>
+			<autofactura-filters id="fg-filter-anchor" prefix="fg"/>
 			<section class="fg-main">
 				<header class="toolbar">
 					<div class="container-fluid py-3">
 						<div class="d-flex flex-wrap gap-2 align-items-end">
 							<div class="me-auto">
-								<h1 class="h5 mb-0">Factura global — selección de tickets</h1>
-								<small class="text-muted">Filtra, selecciona y factura los tickets no facturados</small>
+								<h1 class="h5 mb-0"><xsl:choose><xsl:when test="$cliente">Factura cliente</xsl:when><xsl:otherwise>Factura global — selección de tickets</xsl:otherwise></xsl:choose></h1>
+								<small class="text-muted"><xsl:choose><xsl:when test="$cliente">Selecciona un ticket e indica el RFC del receptor.</xsl:when><xsl:otherwise>Filtra, selecciona y factura los tickets no facturados</xsl:otherwise></xsl:choose></small>
 							</div>
 							<div id="fg-header-actions" class="fg-header-actions"/>
 						</div>
@@ -436,10 +439,12 @@
 							<div class="col">
 								<div class="card-body py-2 d-flex flex-wrap gap-3 align-items-center">
 									<div class="ms-auto d-flex gap-2">
+										<xsl:if test="not($cliente)">
 										<button id="fg-btn-unselect-all" class="btn btn-light btn-sm">Quitar todos</button>
 										<button id="fg-btn-select-all" class="btn btn-light btn-sm">Seleccionar todos</button>
 										<button id="fg-btn-unselect-visible" class="btn btn-light btn-sm">Quitar visibles</button>
 										<button id="fg-btn-select-visible" class="btn btn-light btn-sm">Seleccionar visibles</button>
+										</xsl:if>
 										<button id="fg-btn-clear" class="btn btn-outline-secondary btn-sm" disabled="disabled">Borrar selección</button>
 									</div>
 									<div class="ms-auto d-flex gap-3">
@@ -449,8 +454,8 @@
 										<div><strong>IVA:</strong> <span id="fg-sum-iva">$0.00</span></div>
 										<div><strong>IEPS:</strong> <span id="fg-sum-ieps">$0.00</span></div>
 										<div><strong>Total:</strong> <span id="fg-sum-total" class="fw-semibold">$0.00</span></div>
-										<button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled="disabled">Facturar selección</button>
-										<button id="fg-btn-prefactura" class="btn btn-outline-primary btn-sm" disabled="disabled">Generar pre-factura</button>
+										<button id="fg-btn-invoice" class="btn btn-primary btn-sm" disabled="disabled"><xsl:choose><xsl:when test="$cliente">Facturar ticket</xsl:when><xsl:otherwise>Facturar selección</xsl:otherwise></xsl:choose></button>
+										<xsl:if test="not($cliente)"><button id="fg-btn-prefactura" class="btn btn-outline-primary btn-sm" disabled="disabled">Generar pre-factura</button></xsl:if>
 									</div>
 								</div>
 							</div>
@@ -475,7 +480,7 @@
 						</dialog>
 					</template>
 					<div class="table-responsive">
-						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="/reportes/portal_factura_global_tickets.xslt">
+						<div id="fg-ticket-table" xo-source="#facturas" xo-stylesheet="/reportes/portal_factura_global_tickets.xslt?v=20261123_1">
 							<p role="status">Cargando tickets&#8230;</p>
 						</div>
 					</div>
@@ -496,6 +501,14 @@
 		return rfc === 'XAXX010101' || rfc === 'XAXX010101000' || rfc === 'XEXX010101000' ||
 			/^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc);
 	};
+	autofactura.fg.isClientRfc = value => /^[A-ZÑ&]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(value.toUpperCase()) && !['XAXX010101000', 'XEXX010101000'].includes(value.toUpperCase());
+	autofactura.fg.invoiceRecipientLabel = value => {
+		const recipient = String(value || '').trim();
+		const rfc = recipient.toUpperCase();
+		if (!rfc || rfc === 'FACTURADO') return 'Sin receptor registrado';
+		if (['XAXX010101000', 'XAXX010101'].includes(rfc)) return 'Público en general · ' + rfc;
+		return recipient;
+	};
 	autofactura.fg.updateConfirmationMode = function updateConfirmationMode() {
 		const fg = autofactura.fg;
 		const modal = document.getElementById('fg-confirm');
@@ -505,12 +518,22 @@
 		const ticket = manualId ? fg.allTickets?.find(item => item.id == manualId) : null;
 		const context = fg.getInvoiceContext?.();
 		const rfc = document.getElementById('fg-cfdi-rfc')?.value?.trim() || '';
-		const validRfc = fg.isValidRfc(rfc);
+		const clientInvoice = document.getElementById('factura-global')?.dataset.modo === 'cliente';
+		const validRfc = clientInvoice ? fg.isClientRfc(rfc) : fg.isValidRfc(rfc);
 		const rfcField = modal.querySelector('#fg-cfdi-rfc')?.closest('.col-12');
 		const heading = modal.querySelector('.modal-body h2');
 		const message = modal.querySelector('.modal-body p');
 		const button = modal.querySelector('#fg-m-confirm');
 		const title = modal.querySelector('.modal-title');
+		const recipient = modal.querySelector('#fg-m-current-receptor');
+		recipient.hidden = clientInvoice || action !== 'unmark';
+		recipient.querySelector('dd').textContent = recipient.hidden ? '' : fg.invoiceRecipientLabel(ticket?.receptor);
+		if (clientInvoice) {
+			if (title) title.textContent = 'Confirmar factura cliente';
+			if (button) { button.textContent = 'Sí, facturar'; button.disabled = !validRfc; }
+			if (message) message.textContent = 'Se generará un token para emitir la factura del ticket en Contpaqi.';
+			return;
+		}
 		if (action === 'unmark') {
 			if (title) title.textContent = 'Quitar marca de facturado';
 			if (button) button.textContent = 'Quitar marca';
@@ -537,6 +560,9 @@
 			const fg = autofactura.fg;
 			const manualTicketId = fg?.pendingStatusTicketId || null;
 			const statusAction = fg?.pendingStatusAction || 'mark';
+			const clientInvoice = document.getElementById('factura-global')?.dataset.modo === 'cliente';
+			if (!document.getElementById('factura-global')) return;
+			if (clientInvoice && (manualTicketId || fg?.selected?.size !== 1)) return;
 			if (!fg || fg.invoiceInProgress || (!manualTicketId && (!fg.selected || fg.selected.size === 0))) return;
 			fg.invoiceInProgress = true;
 			const confirmButton = document.getElementById('fg-m-confirm');
@@ -585,8 +611,12 @@
 				} else {
 					const receptor = document.getElementById('fg-cfdi-rfc')?.value?.trim() || '';
 					if (!receptor) throw new Error('Indica el RFC o receptor para procesar los tickets seleccionados.');
+					if (clientInvoice && !fg.isClientRfc(receptor)) {
+						xo.dom.alert('Indica el RFC del cliente para emitir la factura.');
+						return;
+					}
 					const requestedIds = [...fg.selected];
-					const payload = fg.buildInvoiceXml(requestedIds, receptor);
+					const payload = fg.buildInvoiceXml(requestedIds, clientInvoice ? receptor.toUpperCase() : receptor);
 					const result = await xover.server.facturar(new File([payload], "@xml", { type: "text/xml" }));
 					const responseRows = [...result.getElementsByTagName('row')];
 					const updatedIds = new Set(responseRows.map(row => String(row.getAttribute('id') || '').toLowerCase()));
@@ -623,6 +653,7 @@
 		//const autofactura = {};
 		(function () {
 			const root = document.getElementById('factura-global');
+			const clientInvoice = root.dataset.modo === 'cliente';
 			const isCurrent = () => root?.isConnected && document.getElementById('factura-global') === root;
 			const PAGE_SIZE = 50;
 			const fg = autofactura.fg;
@@ -636,8 +667,8 @@
 			// Selection lives on #facturas rows as state:selected.
 			fg.selected = autofactura.ticketSelection;
 			fg.invoiceInProgress = false;
-			if (!('pendingStatusTicketId' in fg)) fg.pendingStatusTicketId = null;
-			if (!('pendingStatusAction' in fg)) fg.pendingStatusAction = null;
+			fg.pendingStatusTicketId = null;
+			fg.pendingStatusAction = null;
 
 			let allTickets = fg.allTickets, filtered = fg.filtered, selected = fg.selected;
 			function showLoader(on) {
@@ -751,17 +782,38 @@
 			}
 
 			let authorizedClients = [];
+			let recipientFilterSupported = false;
 
 			function populateBranchFilter(value = $('fg-f-sucursal').value) {
 				const select = $('fg-f-sucursal');
 				const client = $('fg-f-cliente').value;
 				const branches = new Set(authorizedClients
 					.filter(node => !client || node.getAttribute('id') === client)
-					.flatMap(node => [...node.children].map(branch => branch.getAttribute('nombre'))));
+					.flatMap(node => [...node.querySelectorAll('sucursal')].map(branch => branch.getAttribute('nombre'))));
 				select.replaceChildren(new Option('Todas', ''), ...[...branches]
 					.sort((a, b) => a.localeCompare(b, 'es')).map(branch => new Option(branch, branch)));
 				select.value = branches.has(value) ? value : '';
 				select.disabled = !branches.size;
+			}
+
+			function populateRecipientFilter(value = $('fg-f-receptor').value) {
+				const select = $('fg-f-receptor');
+				const client = $('fg-f-cliente').value;
+				const branch = $('fg-f-sucursal').value;
+				const recipients = new Set(authorizedClients
+					.filter(node => !client || node.getAttribute('id') === client)
+					.flatMap(node => [...node.querySelectorAll('receptor')]
+						.filter(node => !branch || node.getAttribute('sucursal') === branch)
+						.map(node => node.getAttribute('valor')).filter(Boolean)));
+				select.replaceChildren(new Option('Todos', ''), ...[...recipients]
+					.sort((a, b) => a.localeCompare(b, 'es'))
+					.map(recipient => new Option(autofactura.fg.invoiceRecipientLabel(recipient), recipient)));
+				select.value = recipientFilterSupported && recipients.has(value) ? value : '';
+				select.disabled = !recipientFilterSupported || !recipients.size;
+				const help = select.parentElement.querySelector('.form-text');
+				help.hidden = !select.disabled;
+				help.textContent = recipientFilterSupported ? 'No hay receptores registrados para esta selección.'
+					: 'El filtro de receptor no está disponible en el servidor.';
 			}
 
 			async function loadFilterCatalog() {
@@ -776,14 +828,15 @@
 					const response = await xo.server.request.call(context, params,
 						new Headers({ Accept: 'application/xml, text/xml', 'X-Page-Index': '1', 'X-Page-Size': '50' }), { cache: 'no-store' });
 					if (!isCurrent()) return;
-					if (response?.documentElement?.localName !== 'catalogo') throw new Error('Catálogo de clientes no válido.');
+					if (response?.documentElement?.localName !== 'catalogo') throw new Error('Catálogo de empresas no válido.');
+					recipientFilterSupported = response.documentElement.getAttribute('filtroReceptor') === '1';
 					authorizedClients = [...response.documentElement.querySelectorAll(':scope > cliente')];
-					client.replaceChildren(new Option(authorizedClients.length ? 'Todos' : 'Sin clientes autorizados', ''),
+					client.replaceChildren(new Option(authorizedClients.length ? 'Todos' : 'Sin empresas autorizadas', ''),
 						...authorizedClients.map(node => new Option(node.getAttribute('nombre'), node.getAttribute('id'))));
 					client.disabled = !authorizedClients.length;
 				} catch (error) {
 					if (!isCurrent()) return;
-					client.replaceChildren(new Option('No se pudieron cargar los clientes', ''));
+					client.replaceChildren(new Option('No se pudieron cargar las empresas', ''));
 					console.error('Factura Global:', error?.message || error?.status || error);
 				}
 			}
@@ -792,6 +845,7 @@
 				['fg-f-start', 'fg-f-end', 'fg-f-folio', 'fg-f-cliente', 'fg-f-sucursal', 'fg-f-formapago', 'fg-f-producto', 'fg-f-pago-unico', 'fg-f-impuestos'].forEach(id => $(id).value = '');
 				$('fg-f-incluir-productos').checked = false;
 				populateBranchFilter('');
+				populateRecipientFilter('');
 				$('fg-f-estado').value = 'No facturado';
 				$('fg-f-min').value = '0.00';
 				$('fg-f-max').value = '9999.99';
@@ -810,7 +864,7 @@
 
 			let committedFilters;
 			const readFilterDraft = () => ({
-				...Object.fromEntries([...autofactura.ticketFilterNames, 'cliente'].map(name => [name, $('fg-f-' + name).value])),
+				...Object.fromEntries([...autofactura.ticketFilterNames, 'cliente', 'receptor'].map(name => [name, $('fg-f-' + name).value])),
 				'incluir-productos': $('fg-f-incluir-productos').checked
 			});
 
@@ -936,7 +990,7 @@
 			}
 
 			function updateButtons() {
-				const has = selected.size > 0;
+				const has = clientInvoice ? selected.size === 1 : selected.size > 0;
 				const clearButton = $('fg-btn-clear');
 				const invoiceButton = $('fg-btn-invoice');
 				if (clearButton) clearButton.disabled = !has;
@@ -1055,6 +1109,7 @@
 				document.addEventListener('change', (event) => {
 					const input = event.target;
 					if (input.matches?.('#factura-global #fg-chk-all')) {
+						if (clientInvoice) return;
 						if (input.checked) {
 							selected.setMany(pageItems().filter(row => row.estado === 'No facturado').map(row => row.id), true);
 						} else {
@@ -1065,7 +1120,9 @@
 					}
 					if (!input.matches?.('#factura-global #fg-tbody .fg-row')) return;
 					const id = input.dataset.id;
-					input.checked ? selected.add(id) : selected.delete(id);
+					if (!input.checked) selected.delete(id);
+					else if (clientInvoice) selected.selectOnly(id);
+					else selected.add(id);
 					updateSummary();
 					updateButtons();
 					const rows = pageItems();
@@ -1079,8 +1136,8 @@
 
 			const metaNamespace = 'http://panax.io/metadata';
 			let loadingQuery = false;
-			const queryFilters = () => ['start', 'end', 'estado', 'cliente', 'sucursal'].map(name => committedFilters[name]);
-			const appliedFilters = root => ['desde', 'hasta', 'estado', 'tenant', 'sucursal'].map(name => root.getAttribute(name) || '');
+			const queryFilters = () => ['start', 'end', 'estado', 'cliente', 'sucursal', 'receptor'].map(name => committedFilters[name]);
+			const appliedFilters = root => ['desde', 'hasta', 'estado', 'tenant', 'sucursal', 'receptor'].map(name => root.getAttribute(name) || '');
 			const sameFilters = (left, right) => left.every((value, index) => value === right[index]);
 
 			function pageMetadata(model) {
@@ -1089,7 +1146,7 @@
 				return { index: read('pageIndex'), size: read('pageSize'), total: read('totalCount') };
 			}
 
-			async function requestTickets(index, [desde, hasta, estado, tenant, sucursal]) {
+			async function requestTickets(index, [desde, hasta, estado, tenant, sucursal, receptor]) {
 				const query = xo.xml.createDocument('<query order_by="[@tkt]"/>').documentElement;
 				if (desde) query.setAttribute('desde', desde);
 				if (hasta) query.setAttribute('hasta', hasta);
@@ -1097,6 +1154,7 @@
 				if (estado) query.setAttribute('estado', estado);
 				if (tenant) query.setAttribute('tenant', tenant);
 				if (sucursal) query.setAttribute('sucursal', sucursal);
+				if (receptor) query.setAttribute('receptor', receptor);
 				const params = new URLSearchParams({
 					FROM: 'autofactura.portalTickets',
 					'@xml': new XMLSerializer().serializeToString(query)
@@ -1164,6 +1222,7 @@
 					modelRoot.setAttribute('estado', filters[2]);
 					modelRoot.setAttribute('tenant', filters[3]);
 					modelRoot.setAttribute('sucursal', filters[4]);
+					modelRoot.setAttribute('receptor', filters[5]);
 					[committedFilters.start, committedFilters.end] = effective;
 					if (!xo.state.fgFiltersPending) {
 						$('fg-f-start').value = effective[0];
@@ -1199,6 +1258,7 @@
 				const delay = 3000;
 				let timer;
 				let lastPointerMove = -Infinity;
+				let hovering = matchMedia('(hover: hover)').matches && button.matches(':hover');
 
 				function stopTimer() {
 					clearTimeout(timer);
@@ -1206,7 +1266,7 @@
 				}
 
 				function startCountdown() {
-					if (!isCurrent() || !aside.isConnected || !xo.state.fgFiltersPending) return;
+					if (hovering || !isCurrent() || !aside.isConnected || !xo.state.fgFiltersPending) return;
 					const deadline = performance.now() + delay;
 					function tick() {
 						if (!isCurrent() || !aside.isConnected || !xo.state.fgFiltersPending) return;
@@ -1231,9 +1291,10 @@
 
 				fg.filterCountdownChanged = seconds => {
 					if (!isCurrent() || !aside.isConnected) return;
-					badge.hidden = !(seconds > 0);
-					badge.textContent = seconds > 0 ? String(seconds) : '';
-					if (seconds === 0 && xo.state.fgFiltersPending) button.click();
+					const showBadge = !hovering && seconds > 0;
+					badge.hidden = !showBadge;
+					badge.textContent = showBadge ? String(seconds) : '';
+					if (!hovering && seconds === 0 && xo.state.fgFiltersPending) button.click();
 				};
 
 				fg.pressTicketFilterButton = () => {
@@ -1262,12 +1323,19 @@
 				const stageFilter = event => {
 					const control = event.target;
 					if (!control.matches('#fg-filter-panel input, #fg-filter-panel select')) return;
-					if (control.id === 'fg-f-cliente' && event.type === 'change') populateBranchFilter('');
+					if (event.type === 'change') {
+						if (control.id === 'fg-f-cliente') populateBranchFilter('');
+						if (control.id === 'fg-f-cliente' || control.id === 'fg-f-sucursal') populateRecipientFilter();
+						if (control.id === 'fg-f-receptor' && control.value && $('fg-f-estado').value === 'No facturado') {
+							$('fg-f-estado').value = 'Facturado';
+						}
+						if (control.id === 'fg-f-estado' && control.value === 'No facturado') $('fg-f-receptor').value = '';
+					}
 					updateFilterIndicators();
 					const draft = readFilterDraft();
 					xo.state.fgFiltersPending = Object.keys(draft).some(name => draft[name] !== committedFilters[name]);
 					stopTimer();
-					if (xo.state.fgFiltersPending) {
+					if (xo.state.fgFiltersPending && !hovering) {
 						const idle = 200 - (performance.now() - lastPointerMove);
 						if (idle > 0) timer = setTimeout(startCountdown, idle);
 						else startCountdown();
@@ -1281,12 +1349,22 @@
 					event.preventDefault();
 					if (!event.repeat) button.click();
 				}, { signal });
+				button.addEventListener('pointerenter', event => {
+					if (event.pointerType !== 'mouse') return;
+					hovering = true;
+					stopTimer();
+				}, { signal });
+				button.addEventListener('pointerleave', event => {
+					if (event.pointerType !== 'mouse') return;
+					hovering = false;
+					startCountdown();
+				}, { signal });
 				document.addEventListener('pointermove', event => {
 					if (event.pointerType !== 'mouse' || !isCurrent() || !aside.isConnected) return;
 					lastPointerMove = performance.now();
 					if (!xo.state.fgFiltersPending) return;
 					stopTimer();
-					timer = setTimeout(startCountdown, 200);
+					if (!hovering) timer = setTimeout(startCountdown, 200);
 				}, { signal, passive: true });
 				$('fg-btn-reset').addEventListener('click', () => {
 					resetFilterValues();
@@ -1379,6 +1457,7 @@
 				document.addEventListener('click', (event) => {
 					const statusButton = event.target.closest?.('#factura-global #fg-tbody .fg-status');
 					if (statusButton) {
+						if (clientInvoice) return;
 						event.preventDefault();
 						const ticket = allTickets.find(item => item.id == statusButton.dataset.id);
 						const modal = document.querySelector('#fg-confirm');
@@ -1427,7 +1506,7 @@
 							break;
 						case 'fg-btn-invoice': {
 							const modal = document.querySelector('#fg-confirm');
-							if (!modal || selected.size === 0) return;
+							if (!modal || selected.size === 0 || (clientInvoice && selected.size !== 1)) return;
 							fg.pendingStatusTicketId = null;
 							fg.pendingStatusAction = null;
 							autofactura.fg.updateConfirmationMode();
@@ -1462,13 +1541,21 @@
 
 			function moveConfirmModalToBody() {
 				const modal = document.querySelector('#fg-confirm');
-				if (modal && modal.parentElement !== document.body) document.body.appendChild(modal);
+				if (modal && modal.parentElement !== document.body) {
+					const previous = document.body.querySelector(':scope > #fg-confirm');
+					if (previous) {
+						bootstrap.Modal.getInstance(previous)?.dispose();
+						previous.remove();
+					}
+					document.body.appendChild(modal);
+				}
 			}
 
 			Object.assign(fg, {
 				refreshSelection: () => {
 					if (!isCurrent()) return;
-					for (const input of document.querySelectorAll('#factura-global .fg-row')) input.checked = selected.has(input.dataset.id);
+					const selectedIds = new Set(selected);
+					for (const input of document.querySelectorAll('#factura-global .fg-row')) input.checked = selectedIds.has(input.dataset.id);
 					const selectAll = $('fg-chk-all');
 					const rows = pageItems().filter(row => row.estado === 'No facturado');
 					if (selectAll) {
@@ -1510,16 +1597,20 @@
 				attachShellFooter();
 				attachHeaderPagination();
 				function syncTickets(model) {
+					model.documentElement.setAttributeNS(viewNamespace, 'state:modo', clientInvoice ? 'cliente' : 'global');
+					if (clientInvoice && selected.size > 1) selected.clear();
 					const tickets = readTickets(model);
 					allTickets.splice(0, allTickets.length, ...tickets);
 					populatePaymentFilter();
 					const aside = $('fg-sidebar');
-					const [desde, hasta, , tenant, branch] = appliedFilters(model.documentElement);
+					const [desde, hasta, , tenant, branch, receptor] = appliedFilters(model.documentElement);
 					$('fg-f-start').value = desde;
 					$('fg-f-end').value = hasta;
 					$('fg-f-cliente').value = authorizedClients.some(node => node.getAttribute('id') === tenant) ? tenant : '';
 					populateBranchFilter(branch);
 					autofactura.restoreTicketFilters(aside, 'fg');
+					populateRecipientFilter(receptor);
+					if ($('fg-f-receptor').value && $('fg-f-estado').value === 'No facturado') $('fg-f-estado').value = 'Facturado';
 					committedFilters = readFilterDraft();
 					xo.state.fgFiltersPending = false;
 					xo.state.fgFilterSeconds = null;
@@ -1571,11 +1662,17 @@
 						<div class="card-body">
 							<p class="mb-1">Se facturarán <strong id="fg-m-count">0</strong> tickets por <strong id="fg-m-total">$0.00</strong>.</p>
 							<h2 class="h6 mb-3">Parámetros de la factura</h2>
+							<dl id="fg-m-current-receptor" class="mb-3" hidden="hidden">
+								<dt>Receptor registrado</dt>
+								<dd class="mb-0 text-break"></dd>
+							</dl>
 							<div class="row g-3">
 								<div class="col-12">
-									<label class="form-label">RFC Receptor</label>
-									<input id="fg-cfdi-rfc" class="form-control" value="XAXX010101000"/>
-									<div class="form-text">RFC con formato válido genera token. Otro texto solo guarda el estado.</div>
+									<label class="form-label" for="fg-cfdi-rfc">RFC del receptor</label>
+									<input id="fg-cfdi-rfc" class="form-control">
+									<xsl:if test="not($cliente)"><xsl:attribute name="value">XAXX010101000</xsl:attribute></xsl:if>
+								</input>
+									<div class="form-text"><xsl:choose><xsl:when test="$cliente">Captura el RFC del cliente para generar el token de Contpaqi.</xsl:when><xsl:otherwise>RFC con formato válido genera token. Otro texto solo guarda el estado.</xsl:otherwise></xsl:choose></div>
 								</div>
 								<!--<div class="col-12">
 									<label class="form-label">Uso CFDI</label>

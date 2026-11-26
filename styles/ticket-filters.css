@@ -1,17 +1,20 @@
 .ticket-filter-sidebar {
-    background: #fff;
-}
-
-.ticket-filter-sidebar.offcanvas {
-    --bs-offcanvas-width: min(400px, 100vw);
+    position: fixed;
+    inset: 0 0 0 auto;
+    --filter-inset: 1rem;
+    width: min(400px, 100vw);
+    min-width: 0;
     z-index: 1050;
     display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-left: 1px solid #dee2e6;
     visibility: hidden;
     transform: translateX(100%);
     transition: transform .3s ease-in-out, visibility .3s;
 }
 
-.ticket-filter-sidebar.offcanvas.is-open {
+.ticket-filter-sidebar.is-open {
     visibility: visible;
     transform: translateX(0);
 }
@@ -33,8 +36,24 @@
     pointer-events: auto;
 }
 
-.ticket-filter-sidebar .offcanvas-header {
+.ticket-filter-sidebar > .offcanvas-header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .75rem;
+    padding: var(--filter-inset);
     border-bottom: 1px solid #dee2e6;
+}
+
+.ticket-filter-sidebar > .offcanvas-header .offcanvas-title {
+    min-width: 0;
+    margin: 0;
+}
+
+.ticket-filter-sidebar > .offcanvas-header .btn-close {
+    flex: 0 0 auto;
+    margin: 0 0 0 auto;
+    padding: .5rem;
 }
 
 .ticket-filter-sidebar af-ticket-filters {
@@ -47,6 +66,9 @@
 .ticket-filter-sidebar .offcanvas-body {
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
+    padding: var(--filter-inset);
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior-y: contain;
 }
@@ -57,7 +79,7 @@
 }
 
 .ticket-filter-group + .ticket-filter-group {
-    margin-top: .5rem;
+    margin-top: .75rem;
 }
 
 .ticket-filter-group > summary {
@@ -87,14 +109,17 @@
     font-size: .72rem;
 }
 
-.ticket-filter-group-fields {
+.ticket-filter-sidebar .ticket-filter-group-fields {
     margin: 0;
-    padding: 0 .5rem .65rem;
+    --bs-gutter-x: 0;
+    --bs-gutter-y: 0;
+    row-gap: .75rem;
+    padding: .8rem;
 }
 
 .ticket-filter-actions {
     flex: 0 0 auto;
-    padding: .75rem 1rem;
+    padding: var(--filter-inset);
     border-top: 1px solid #dee2e6;
     background: #fff;
 }
@@ -143,6 +168,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: .5rem;
     text-align: left;
     cursor: pointer;
 }
@@ -239,35 +265,20 @@
     box-shadow: inset 4px 0 0 #d97706, 0 0 0 .12rem rgba(217, 119, 6, .16);
 }
 
-/* Sales filters are mounted and removed with their XOver route. */
+/* Fixed controls remain in their route so XOver removes them on navigation. */
 autofactura-filters { display: contents; }
 #shell > :has(autofactura-filters[data-filters-open="true"]) { z-index: 1022; }
 
-autofactura-filters .ticket-filter-sidebar {
-    --filter-inset: 1rem;
-    flex-direction: column;
-    min-width: 0;
-}
-autofactura-filters .ticket-filter-sidebar > .offcanvas-header {
-    flex: 0 0 auto;
-    gap: .75rem;
-    padding: var(--filter-inset);
-}
-autofactura-filters .ticket-filter-sidebar .offcanvas-body {
-    min-width: 0;
-    padding: var(--filter-inset);
-    overflow-x: hidden;
-}
-autofactura-filters .portal-filter-outlet,
-autofactura-filters .portal-filter-form {
+.ticket-filter-sidebar .portal-filter-outlet,
+.ticket-filter-sidebar .portal-filter-form {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
     min-height: 0;
     margin: 0;
 }
-autofactura-filters .portal-filter-form .ticket-filter-group-fields {
+
+.portal-filter-form .ticket-filter-group-fields {
     display: grid;
     gap: .75rem;
-    padding: .8rem;
 }

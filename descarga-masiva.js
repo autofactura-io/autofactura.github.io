@@ -162,6 +162,7 @@ xo.listener.on('beforeFetch', function ({ request }) {
     if (window.autofacturaVisorCFDIInicializado) return;
     window.autofacturaVisorCFDIInicializado = true;
     const reportTag = '#resumen_descarga_cfdi';
+    const reportIsActive = () => (location.hash || history.state?.active) === reportTag;
     const filterNames = ['empresa', 'fecha_consultada', 'uuid', 'sentido', 'estatus'];
     const stateNamespace = 'http://panax.io/state';
     let appliedFilters = {};
@@ -180,26 +181,23 @@ xo.listener.on('beforeFetch', function ({ request }) {
         return filters;
     }
 
-    function updateRefreshButton() {
+    function updateRefreshButton(restart = false) {
         const button = document.getElementById('cfdi-refresh');
-        if (!button || location.hash !== reportTag) return;
+        if (!reportIsActive() || !button?.update) return;
         const draft = readReportFilters();
         const dirty = filterNames.some(name => draft[name] !== appliedFilters[name]);
-        const label = dirty ? 'Aplicar filtros' : 'Actualizar';
-        button.classList.toggle('btn-success', dirty);
-        button.setAttribute('aria-label', label);
-        button.title = label;
+        button.update(dirty, restart);
     }
 
     xo.listener.on('change::@state:selected', function ({ document }) {
-        if (location.hash !== reportTag || document !== xo.stores[reportTag].document ||
+        if (!reportIsActive() || document !== xo.stores[reportTag].document ||
             !filterNames.includes(this.ownerElement?.localName)) return;
         this.inert = true;
-        updateRefreshButton();
+        updateRefreshButton(true);
     });
     window.addEventListener('change', function (event) {
         const field = event.target;
-        if (location.hash !== reportTag || !field.matches?.('px-daterange[name=fecha_consultada][xo-slot="state:selected"]')) return;
+        if (!reportIsActive() || !field.matches?.('px-daterange[name=fecha_consultada][xo-slot="state:selected"]')) return;
         const model = xo.stores[reportTag].document.documentElement;
         const dateFilter = [...model?.children || []].find(node => node.localName === 'fecha_consultada');
         if (!dateFilter) return;
@@ -207,25 +205,25 @@ xo.listener.on('beforeFetch', function ({ request }) {
         if (dateFilter.getAttributeNS(stateNamespace, 'selected') !== value) {
             dateFilter.setAttributeNS(stateNamespace, 'state:selected', value);
         }
-        updateRefreshButton();
+        updateRefreshButton(true);
     }, true);
     xo.listener.on('input::input[name=uuid][xo-slot]', function () {
-        if (location.hash !== reportTag) return;
+        if (!reportIsActive()) return;
         const selection = this.scope;
         if (selection?.ownerDocument === xo.stores[reportTag].document) selection.set(this.value);
     });
     xo.listener.on('changeFilter', function () {
-        queueMicrotask(updateRefreshButton);
+        queueMicrotask(() => updateRefreshButton(true));
     });
 
     async function refreshReport(button) {
-        if (requestedFilters || location.hash !== reportTag) return;
+        if (requestedFilters || !reportIsActive()) return;
         requestedFilters = readReportFilters();
         const params = new URLSearchParams({ FROM: '[DescargaMasiva].[reporteDescargaCFDI]' });
         for (const name of filterNames) {
             if (requestedFilters[name]) params.set('@' + name, requestedFilters[name]);
         }
-        button.disabled = true;
+        button.setAttribute('aria-disabled', 'true');
         button.setAttribute('aria-busy', 'true');
         try {
             const context = xo.xml.createDocument('<reporte/>');
@@ -241,19 +239,15 @@ xo.listener.on('beforeFetch', function ({ request }) {
             xo.dom.alert('No se pudo actualizar el reporte. Vuelve a intentarlo.');
         } finally {
             requestedFilters = undefined;
-            button.disabled = false;
+            button.removeAttribute('aria-disabled');
             button.removeAttribute('aria-busy');
             updateRefreshButton();
         }
     }
 
-    window.addEventListener('click', function (event) {
-        const button = event.target.closest?.('#cfdi-refresh');
-        if (!button) return;
-        event.preventDefault();
-        event.stopPropagation();
-        refreshReport(button);
-    }, true);
+    xo.listener.on('cfdiFilterRefresh', function ({ target }) {
+        if (target?.matches?.('px-refresh#cfdi-refresh')) return refreshReport(target);
+    });
 
     window.addEventListener('click', function (event) {
         const control = event.target.closest?.('[data-cfdi-uuid]');

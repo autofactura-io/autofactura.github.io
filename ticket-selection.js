@@ -40,8 +40,15 @@
                 } else row.removeAttributeNS(namespace, 'selected');
             }
         },
+        selectOnly(id) {
+            for (const row of rows()) {
+                if (row.getAttribute('id') === String(id)) {
+                    if (!isSelected(row)) row.setAttributeNS(namespace, 'state:selected', 'true');
+                } else if (isSelected(row)) row.removeAttributeNS(namespace, 'selected');
+            }
+        },
         clear() {
-            for (const row of rows()) row.removeAttributeNS(namespace, 'selected');
+            for (const row of rows()) if (isSelected(row)) row.removeAttributeNS(namespace, 'selected');
         },
         *[Symbol.iterator]() {
             for (const row of rows()) if (isSelected(row)) yield row.getAttribute('id');

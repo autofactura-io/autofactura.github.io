@@ -1,4 +1,4 @@
-﻿<?xml-stylesheet type="text/xsl" href="menus.xslt" target="@#shell @#menu"?>
+﻿<?xml-stylesheet type="text/xsl" href="menus.xslt?v=20261122_8" target="@#shell @#menu"?>
 <menus>
 	<settings/>
 	<!--<notifications>

@@ -4,7 +4,7 @@
     xmlns:session="http://panax.io/session"
     xmlns:meta="http://panax.io/metadata"
     exclude-result-prefixes="session meta">
-    <xsl:import href="/reportes/portal_ventas_historica.xslt?v=20261125_5"/>
+    <xsl:import href="/reportes/portal_ventas_historica.xslt?v=20261126_7"/>
     <xsl:param name="session:user_login"/>
     <xsl:variable name="authorized" select="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'"/>
 
@@ -29,7 +29,7 @@
                             </p>
                             <xsl:if test="@modulo='ventas' and not(ventas/grupo or ventas-historica)">
                                 <p class="small text-muted mb-2">Elige un periodo y una vista en Filtros. Luego pulsa Consultar.</p>
-                                <button class="btn btn-outline-primary btn-sm" type="button" onclick="xo.state.showFilters = true">Abrir filtros</button>
+                                <button class="btn btn-outline-primary btn-sm" type="button" onclick="this.dispatch('portal:abrirFiltros')">Abrir filtros</button>
                             </xsl:if>
                             <xsl:if test="not(@error)"><xsl:apply-templates select="model|ventas|ventas-historica"/></xsl:if>
 

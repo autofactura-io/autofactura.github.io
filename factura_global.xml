@@ -1,2 +1,2 @@
-<?xml-stylesheet type="text/xsl" href="factura_global.xslt?v=31" target="@#shell main"?>
-<factura-global/>
+<?xml-stylesheet type="text/xsl" href="factura_global.xslt?v=20261126_7" target="@#shell main"?>
+<factura-global xmlns:state="http://panax.io/state" state:showFilters="false"/>

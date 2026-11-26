@@ -1,4 +1,4 @@
-autofactura.ticketFiltersTemplate = autofactura.ticketFiltersTemplate || fetch('autofactura/components/ticket-filters.xhtml?v=5').then(async response => {
+autofactura.ticketFiltersTemplate = autofactura.ticketFiltersTemplate || fetch('autofactura/components/ticket-filters.xhtml?v=20261125_1').then(async response => {
     if (!response.ok) throw new Error('No se pudo cargar el componente de filtros');
     const html = await response.text();
     const document = new DOMParser().parseFromString(html, 'text/html');
@@ -39,71 +39,42 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
     autofactura.ticketFiltersMountToken = mountToken;
     autofactura.ticketFiltersCleanup?.();
     const owner = anchor.closest('section');
-    const id = name => `${prefix}-${name}`;
-    const aside = document.createElement('aside');
-    aside.id = id('sidebar');
-    aside.className = `${prefix === 'fg' ? 'fg-sidebar' : 'rc-folio-filters'} ticket-filter-sidebar offcanvas offcanvas-end`;
-    aside.setAttribute('tabindex', '-1');
-    aside.setAttribute('aria-labelledby', id('filter-title'));
-    aside.setAttribute('aria-label', prefix === 'fg' ? 'Filtros de tickets' : 'Filtros del concentrador');
-    aside.setAttribute('aria-hidden', 'true');
-    const backdrop = document.createElement('div');
-    backdrop.className = 'ticket-filter-backdrop';
-    backdrop.setAttribute('aria-hidden', 'true');
+    const declared = anchor.matches('autofactura-filters');
+    const panel = declared ? anchor : document.createElement('autofactura-filters');
+    if (!declared) {
+        panel.setAttribute('prefix', prefix);
+        anchor.before(panel);
+    }
+    const aside = await xo.waitFor({ selector: 'aside[part="panel"][id]', root: panel }, 5000);
+    if (!aside || !owner?.isConnected || autofactura.ticketFiltersMountToken !== mountToken) {
+        if (!declared) panel.remove();
+        return null;
+    }
+    aside.classList.add(prefix === 'fg' ? 'fg-sidebar' : 'rc-folio-filters');
     const component = document.createElement('af-ticket-filters');
     component.setAttribute('prefix', prefix);
     component.setAttribute('apply-id', applyId);
     component.setAttribute('reset-id', resetId);
     component.setAttribute('help-text', helpText);
-    aside.append(component);
-    // Floating controls must not trigger the shell's page-replacement append event.
-    document.body.appendChild(backdrop);
-    document.body.appendChild(aside);
+    aside.appendChild(component);
     try {
         await component.ready;
     } catch (error) {
-        backdrop.remove();
-        aside.remove();
+        component.remove();
+        if (!declared) panel.remove();
         throw error;
     }
-    if (!owner?.isConnected || !aside.isConnected || autofactura.ticketFiltersMountToken !== mountToken) {
-        backdrop.remove();
-        aside.remove();
+    if (!owner.isConnected || autofactura.ticketFiltersMountToken !== mountToken) {
+        component.remove();
+        if (!declared) panel.remove();
         return null;
     }
-    if (prefix !== 'fg') aside.querySelector('[data-filter-key="client"]')?.remove();
+    if (prefix !== 'fg') {
+        aside.querySelector('[data-filter-key="client"]')?.remove();
+        aside.querySelector('[data-filter-key="recipient"]')?.remove();
+    }
     const calendarModal = component.calendarModal;
     document.body.appendChild(calendarModal);
-    const toggle = document.createElement('button');
-    toggle.id = id('filter-toggle');
-    toggle.type = 'button';
-    toggle.className = 'ticket-filter-toggle';
-    toggle.setAttribute('aria-controls', aside.id);
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Mostrar filtros');
-    toggle.setAttribute('title', 'Filtros');
-    toggle.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg><span class="ticket-filter-toggle-count" hidden></span>';
-    document.body.appendChild(toggle);
-    const setOpen = open => {
-        if (!aside.isConnected || !owner?.isConnected) return;
-        aside.classList.toggle('is-open', open);
-        backdrop.classList.toggle('is-open', open);
-        aside.setAttribute('aria-hidden', String(!open));
-        toggle.setAttribute('aria-expanded', String(open));
-        toggle.setAttribute('aria-label', open ? 'Cerrar filtros' : 'Mostrar filtros');
-        if (open) {
-            aside.setAttribute('role', 'dialog');
-            aside.setAttribute('aria-modal', 'true');
-            aside.querySelector('.btn-close')?.focus();
-        } else {
-            aside.removeAttribute('role');
-            aside.removeAttribute('aria-modal');
-            toggle.focus();
-        }
-    };
-    toggle.addEventListener('click', () => setOpen(!aside.classList.contains('is-open')));
-    backdrop.addEventListener('click', () => setOpen(false));
-    aside.querySelector('.btn-close')?.addEventListener('click', () => setOpen(false));
     aside.querySelector(`#${prefix}-f-date-range`)?.addEventListener('click', async () => {
         if (typeof openCalendar !== 'function') return;
         const start = aside.querySelector(`#${prefix}-f-start`);
@@ -119,20 +90,16 @@ autofactura.mountTicketFilters = async function mountTicketFilters(anchor, { pre
         autofactura.updateTicketDateRangeLabel(aside, prefix);
         start.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    aside.addEventListener('keydown', event => {
-        if (event.key === 'Escape') setOpen(false);
-    });
     const observer = new MutationObserver(() => {
-        if (!owner?.isConnected) cleanup();
+        if (!panel.isConnected) cleanup();
     });
     observer.observe(document.body, { childList: true, subtree: true });
     const cleanup = () => {
         observer.disconnect();
-        backdrop.remove();
         if (calendarModal.style.display !== 'none') closeCalendar();
         calendarModal.remove();
-        toggle.remove();
-        aside.remove();
+        component.remove();
+        if (!declared) panel.remove();
         if (autofactura.ticketFiltersCleanup === cleanup) autofactura.ticketFiltersCleanup = null;
     };
     autofactura.ticketFiltersCleanup = cleanup;
@@ -189,6 +156,7 @@ autofactura.updateTicketFilterIndicators = function updateTicketFilterIndicators
         folio: Boolean(value('folio').trim()),
         client: Boolean(value('cliente')),
         branch: Boolean(value('sucursal')),
+        recipient: Boolean(value('receptor')),
         payment: Boolean(value('formapago')),
         amount: (value('min') !== '' && Number(value('min')) !== 0) || (value('max') !== '' && Number(value('max')) !== 9999.99),
         product: Boolean(value('producto').trim()),

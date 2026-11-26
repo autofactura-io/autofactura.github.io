@@ -1,6 +1,7 @@
 (() => {
     const pageSize = 50;
     const metadata = 'http://panax.io/metadata';
+    const filterNamespace = 'http://autofactura.io/filters';
     const fields = ['tenant', 'sucursal', 'desde', 'hasta', 'estado', 'agrupacion', 'informe', 'borrados'];
     const routes = { ventas: '#ventas', facturas: '#consulta_facturas' };
     const pending = new WeakSet();
@@ -76,6 +77,9 @@
             }
             root.querySelector('model, ventas, ventas-historica')?.remove();
             root.appendChild(model.importNode(result, true));
+            const open = result.getAttributeNS(filterNamespace, 'open');
+            if (open === null) root.removeAttributeNS(filterNamespace, 'open');
+            else root.setAttributeNS(filterNamespace, 'autofactura-filters:open', open);
             for (const name of fields) root.setAttribute(name, filters[name] ?? '');
             for (const date of ['desde', 'hasta']) {
                 const effective = result.getAttribute(date);
@@ -108,23 +112,22 @@
     // A cached report template may still request initialization explicitly.
     autofactura.operacion = { mount: loadReport };
     xo.listener.on('render', loadReport);
-    document.addEventListener('submit', function (event) {
-        const form = event.target;
-        if (!form.matches('#portal-operacion-filtros')) return;
-        event.preventDefault();
-
-        const active = xo.stores.active;
-        const root = active?.document?.documentElement;
-        const store = storeFor(root);
+    xo.listener.on('portal:abrirFiltros', function ({ target }) {
+        const root = target.closest('#portal-operacion')?.scope;
+        if (storeFor(root) !== xo.stores.active) return;
+        document.getElementById(`portal-${root.getAttribute('modulo')}-filters`)?.requestFiltersOpen(true);
+    });
+    xo.listener.on('portal:consultar', function ({ target }) {
+        const store = xo.stores.active;
+        const root = store?.document?.documentElement;
         const draft = root?.querySelector('filtros');
-        if (!store || !draft || pending.has(store)) return;
-
-        const submitted = new FormData(form);
+        if (!draft || storeFor(root) !== store || !target?.matches('#portal-operacion-filtros') || pending.has(store)) return;
+        const submitted = new FormData(target);
         for (const name of fields) {
             if (submitted.has(name)) draft.setAttribute(name, String(submitted.get(name)).trim());
         }
-        void search(store, 1, readFilters(draft));
-    }, true);
+        return search(store, 1, readFilters(draft));
+    });
     xo.listener.on('portal:pagina', function ({ target }) {
         const root = target.closest('#portal-operacion')?.scope;
         const store = storeFor(root);
@@ -139,11 +142,7 @@
         if (this.localName === 'tenant') draft.setAttribute('sucursal', '');
         else if (this.localName !== 'informe') return;
         const form = document.getElementById('portal-operacion-filtros');
-        if (form?.scope === draft) {
-            const outlet = form.closest('.portal-filter-outlet[xo-stylesheet]');
-            if (outlet) void outlet.render();
-            else void store.render();
-        }
+        if (xo.stores.active === store && form?.scope === draft) void store.render();
     });
     xo.listener.on('failure', function ({ request, response, statusCodes }) {
         if (response?.status === 404 && reportRequests.has(request?.target)) statusCodes.ignored.push(404);

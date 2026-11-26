@@ -12,7 +12,7 @@
 							<thead>
 								<tr>
 									<th class="sticky" style="width:42px;">
-										<input id="fg-chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles"/>
+										<xsl:if test="model/@state:modo!='cliente' or not(model/@state:modo)"><input id="fg-chk-all" class="form-check-input" type="checkbox" title="Seleccionar visibles"/></xsl:if>
 									</th>
 									<th class="sticky">Fecha</th>
 									<th class="sticky">Folio</th>
@@ -51,7 +51,7 @@
         <xsl:variable name="payment" select="$source/@fp"/>
         <tr data-ticket-id="{@id}">
             <td>
-                <input class="form-check-input fg-row" type="checkbox" data-id="{@id}">
+                <input class="form-check-input fg-row" type="checkbox" data-id="{@id}" aria-label="Seleccionar ticket {$source/@tkt}">
                     <xsl:if test="$source/@state:selected='true' or $source/@state:selected='1'">
                         <xsl:attribute name="checked">checked</xsl:attribute>
                     </xsl:if>
@@ -111,6 +111,9 @@
             </td>
             <td>
                 <xsl:choose>
+                    <xsl:when test="/model/@state:modo='cliente'">
+                        <xsl:choose><xsl:when test="$billed"><span class="badge text-bg-success">Facturado</span></xsl:when><xsl:otherwise><span class="badge text-bg-warning">No facturado</span></xsl:otherwise></xsl:choose>
+                    </xsl:when>
                     <xsl:when test="$billed">
                         <button type="button" class="badge text-bg-success border-0 fg-status" data-id="{@id}" data-action="unmark" title="Quitar marca de facturado">
                             <xsl:text>Facturado</xsl:text>

@@ -1,15 +1,11 @@
 <template>
-  <div class="offcanvas-header">
-    <h2 class="offcanvas-title h5" id="__PREFIX__-filter-title">Filtros <span id="__PREFIX__-active-filter-count" class="ticket-filter-active-indicator" hidden="hidden"><span aria-hidden="true">●</span><span id="__PREFIX__-active-filter-count-text"></span></span></h2>
-    <button type="button" class="btn-close" aria-label="Cerrar filtros"></button>
-  </div>
   <div id="__PREFIX__-filter-panel" class="offcanvas-body">
     <details class="ticket-filter-group" open="open">
-      <summary>Cliente<span class="ticket-filter-group-count" hidden="hidden"></span></summary>
+      <summary>Empresa y sucursal<span class="ticket-filter-group-count" hidden="hidden"></span></summary>
       <div class="row g-2 ticket-filter-group-fields">
         <div class="col-12 ticket-filter-field" data-filter-key="client">
-          <label class="form-label mb-1" for="__PREFIX__-f-cliente">Cliente</label>
-          <select id="__PREFIX__-f-cliente" class="form-select form-select-sm" disabled="disabled"><option value="">Cargando clientes…</option></select>
+          <label class="form-label mb-1" for="__PREFIX__-f-cliente">Empresa</label>
+          <select id="__PREFIX__-f-cliente" class="form-select form-select-sm" disabled="disabled"><option value="">Cargando empresas…</option></select>
         </div>
         <div class="col-12 ticket-filter-field" data-filter-key="branch">
           <label class="form-label mb-1" for="__PREFIX__-f-sucursal">Sucursal</label><select id="__PREFIX__-f-sucursal" class="form-select form-select-sm"><option value="">Todos</option></select>
@@ -26,6 +22,11 @@
         </div>
         <div class="col-12 ticket-filter-field" data-filter-key="folio">
           <label class="form-label mb-1" for="__PREFIX__-f-folio">Folio</label><input id="__PREFIX__-f-folio" type="search" class="form-control form-control-sm" placeholder="Ej. 1001, 1002, 1003" />
+        </div>
+        <div class="col-12 ticket-filter-field" data-filter-key="recipient">
+          <label class="form-label mb-1" for="__PREFIX__-f-receptor">Receptor de factura</label>
+          <select id="__PREFIX__-f-receptor" class="form-select form-select-sm" aria-describedby="__PREFIX__-recipient-help" disabled="disabled"><option value="">Todos</option></select>
+          <div id="__PREFIX__-recipient-help" class="form-text">Cargando receptores…</div>
         </div>
         <div class="col-12 ticket-filter-field" data-filter-key="status">
           <label class="form-label mb-1" for="__PREFIX__-f-estado">Estado</label><select id="__PREFIX__-f-estado" class="form-select form-select-sm"><option value="No facturado" selected="selected">No facturado</option><option value="Facturado">Facturado</option><option value="">Todos</option></select>

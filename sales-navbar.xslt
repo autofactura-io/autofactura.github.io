@@ -20,7 +20,7 @@ exclude-result-prefixes="session portal"
 	<xsl:import href="common.xslt"/>
 	<xsl:import href="~/widgets/page_navbar.xslt"/>
 	<xsl:import href="widgets/combobox.xslt"/>
-	<xsl:import href="/reportes/portal_operacion_nav.xslt?v=20261125_9"/>
+	<xsl:import href="/reportes/portal_operacion_nav.xslt?v=20261126_7"/>
 
 	<xsl:param name="session:user_login"/>
 
@@ -92,11 +92,7 @@ exclude-result-prefixes="session portal"
 				<xsl:choose>
 					<xsl:when test="reporte/filtros">
 						<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
-							<autofactura-filters id="portal-{reporte/@modulo}-filters" prefix="portal-{reporte/@modulo}">
-								<div class="portal-filter-outlet">
-									<xsl:apply-templates select="reporte/filtros" mode="portal:filters"/>
-								</div>
-							</autofactura-filters>
+							<xsl:apply-templates select="reporte" mode="portal:filter-panel"/>
 						</xsl:if>
 					</xsl:when>
 					<xsl:otherwise>

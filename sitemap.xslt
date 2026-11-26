@@ -13,6 +13,17 @@ exclude-result-prefixes="#default session sitemap shell state"
 	<xsl:key name="sitemap-item" match="item" use="'#any'"/>
 	<xsl:key name="sitemap-menu-item" match="item[item]" use="@xo:id"/>
 
+	<xsl:template match="item[@modulo='facturacion']" mode="sitemap:widget" priority="10">
+		<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
+			<li class="sidebar-item menu">
+				<details>
+					<summary class="sidebar-link"><xsl:value-of select="@title"/></summary>
+					<ul class="sidebar-dropdown list-unstyled mb-0"><xsl:apply-templates select="item" mode="sitemap:widget"/></ul>
+				</details>
+			</li>
+		</xsl:if>
+	</xsl:template>
+
 	<xsl:template match="item[@target and not(item)]" mode="sitemap:widget" priority="10">
 		<xsl:variable name="isMayorga" select="translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='mayorga'"/>
 		<xsl:if test="$isMayorga = (@target='#resumen_descarga_cfdi')">

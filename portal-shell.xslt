@@ -15,7 +15,7 @@ xmlns:xlink="http://www.w3.org/1999/xlink"
 	</xsl:template>
 
 	<xsl:template mode="shell:page-menu" match="*" priority="1">
-		<span class="page-menu" xo-source="active" xo-stylesheet="/sales-navbar.xslt?v=20261125_9"/>
+		<span class="page-menu" xo-store="active" xo-stylesheet="/sales-navbar.xslt?v=20261126_7"/>
 	</xsl:template>
 
 	<xsl:template mode="shell:sitemap" match="*" priority="1">
