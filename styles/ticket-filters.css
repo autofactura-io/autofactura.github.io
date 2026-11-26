@@ -238,3 +238,36 @@
     background-color: #fff0cc;
     box-shadow: inset 4px 0 0 #d97706, 0 0 0 .12rem rgba(217, 119, 6, .16);
 }
+
+/* Sales filters are mounted and removed with their XOver route. */
+autofactura-filters { display: contents; }
+#shell > :has(autofactura-filters[data-filters-open="true"]) { z-index: 1022; }
+
+autofactura-filters .ticket-filter-sidebar {
+    --filter-inset: 1rem;
+    flex-direction: column;
+    min-width: 0;
+}
+autofactura-filters .ticket-filter-sidebar > .offcanvas-header {
+    flex: 0 0 auto;
+    gap: .75rem;
+    padding: var(--filter-inset);
+}
+autofactura-filters .ticket-filter-sidebar .offcanvas-body {
+    min-width: 0;
+    padding: var(--filter-inset);
+    overflow-x: hidden;
+}
+autofactura-filters .portal-filter-outlet,
+autofactura-filters .portal-filter-form {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0;
+}
+autofactura-filters .portal-filter-form .ticket-filter-group-fields {
+    display: grid;
+    gap: .75rem;
+    padding: .8rem;
+}

@@ -1,0 +1,84 @@
+<script>
+  (() => {
+    let activeStore;
+    xover.listener.on('beforeRender', function ({ store, document }) {
+      if (!store || store !== xo.stores.active || document !== store.document || store === activeStore) return;
+      activeStore = store;
+      xo.state.showFilters = document.documentElement?.getAttributeNS(xo.spaces.state, 'showFilters') === 'true';
+    });
+    xover.listener.on('change::#state:showFilters', function ({ value }) {
+      for (const panel of document.querySelectorAll('autofactura-filters')) {
+        panel.setFiltersOpen?.(value === true);
+      }
+    });
+  })();
+</script>
+<template prefix="autofactura">
+  <script>
+    constructor.extend({
+      init() {
+        const panel = this.querySelector('[part="panel"]');
+        const toggle = this.querySelector('[part="toggle"]');
+        if (!panel || !toggle) return;
+        const prefix = this.getAttribute('prefix');
+        panel.id = prefix + '-sidebar';
+        const title = panel.querySelector('[part="title"]');
+        title.id = prefix + '-filter-title';
+        panel.querySelector('[part="active-count"]').id = prefix + '-active-filter-count';
+        panel.querySelector('[part="count-text"]').id = prefix + '-active-filter-count-text';
+        panel.setAttribute('aria-labelledby', title.id);
+        toggle.id = prefix + '-filter-toggle';
+        toggle.setAttribute('aria-controls', panel.id);
+        if (!this.filtersBound) {
+          this.filtersBound = true;
+          this.addEventListener('click', event => {
+            if (event.target.closest('[part="toggle"]')) this.requestFiltersOpen(xo.state.showFilters !== true);
+            else if (event.target.closest('[part="close"], [part="backdrop"]')) this.requestFiltersOpen(false);
+          });
+          this.addEventListener('keydown', event => {
+            if (event.key !== 'Escape' || xo.state.showFilters !== true) return;
+            event.preventDefault();
+            this.requestFiltersOpen(false);
+          });
+        }
+        this.setFiltersOpen(xo.state.showFilters === true);
+      },
+      requestFiltersOpen(open) {
+        xo.state.showFilters = open;
+        this.querySelector(open ? '[part="close"]' : '[part="toggle"]')?.focus();
+      },
+      setFiltersOpen(open) {
+        const panel = this.querySelector('[part="panel"]');
+        const toggle = this.querySelector('[part="toggle"]');
+        if (!panel || !toggle) return;
+        this.setAttribute('data-filters-open', String(open));
+        panel.classList.toggle('is-open', open);
+        this.querySelector('[part="backdrop"]').classList.toggle('is-open', open);
+        panel.setAttribute('aria-hidden', String(!open));
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Cerrar filtros' : 'Mostrar filtros');
+        if (open) {
+          panel.removeAttribute('inert');
+          panel.setAttribute('role', 'dialog');
+          panel.setAttribute('aria-modal', 'true');
+        } else {
+          panel.setAttribute('inert', '');
+          panel.removeAttribute('role');
+          panel.removeAttribute('aria-modal');
+        }
+      }
+    });
+  </script>
+  <button part="toggle" type="button" class="ticket-filter-toggle" aria-label="Mostrar filtros" title="Filtros" aria-expanded="false">
+    <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/></svg>
+    <span class="ticket-filter-toggle-count" hidden="hidden"></span>
+  </button>
+  <div part="backdrop" class="ticket-filter-backdrop" aria-hidden="true"></div>
+  <aside part="panel" class="ticket-filter-sidebar offcanvas offcanvas-end" tabindex="-1" aria-hidden="true" inert="">
+    <div class="offcanvas-header">
+      <h2 part="title" class="offcanvas-title h5">Filtros <span part="active-count" class="ticket-filter-active-indicator" hidden="hidden"><span aria-hidden="true">●</span><span part="count-text"></span></span></h2>
+      <button part="close" type="button" class="btn-close" aria-label="Cerrar filtros"></button>
+    </div>
+    <slot></slot>
+  </aside>
+</template>

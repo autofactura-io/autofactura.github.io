@@ -12,11 +12,15 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xmlns:widget="http://panax.io/widget"
 xmlns:navbar="http://widgets.panaxbi.com/navbar"
 xmlns:combobox="http://panax.io/widget/combobox"
+xmlns:session="http://panax.io/session"
+exclude-result-prefixes="session"
 >
 	<xsl:import href="headers.xslt"/>
 	<xsl:import href="common.xslt"/>
 	<xsl:import href="~/widgets/page_navbar.xslt"/>
 	<xsl:import href="widgets/combobox.xslt"/>
+
+	<xsl:param name="session:user_login"/>
 
 	<xsl:template mode="widget" match="@*|*"/>
 
@@ -83,10 +87,20 @@ xmlns:combobox="http://panax.io/widget/combobox"
 				:root { --sections-filter-height: 16px; }
 			</style>
 			<nav class="navbar navbar-expand-md">
-				<form action="javascript:void(0);" onsubmit="section.source.fetch()">
-					<xsl:apply-templates mode="navbar:widget" select="model"/>
-					<!--<xsl:apply-templates mode="button" select="key('data','*')[not(*)]/@state:record_count[.&gt;0]"/>-->
-				</form>
+				<xsl:choose>
+					<xsl:when test="reporte/filtros">
+						<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
+							<autofactura-filters id="portal-{reporte/@modulo}-filters" prefix="portal-{reporte/@modulo}">
+								<div class="portal-filter-outlet" xo-source="active" xo-stylesheet="/reportes/portal_operacion_nav.xslt?v=20261125_4"/>
+							</autofactura-filters>
+						</xsl:if>
+					</xsl:when>
+					<xsl:otherwise>
+						<form action="javascript:void(0);" onsubmit="section.source.fetch()">
+							<xsl:apply-templates mode="navbar:widget" select="model"/>
+						</form>
+					</xsl:otherwise>
+				</xsl:choose>
 				<ul id="shell_buttons" class="nav col-md justify-content-end list-unstyled d-flex">
 					<xsl:apply-templates mode="buttons"/>
 				</ul>
