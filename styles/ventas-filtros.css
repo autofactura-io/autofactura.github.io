@@ -4,7 +4,7 @@ autofactura-filters .ticket-filter-backdrop {
     z-index: 1049;
 }
 
-autofactura-filters .ticket-filter-sidebar {
+autofactura-filters .ticket-filter-sidebar.offcanvas {
     position: fixed;
     inset: 0 0 0 auto;
     width: min(400px, 100vw);
@@ -20,23 +20,23 @@ autofactura-filters .ticket-filter-sidebar {
     z-index: 1050;
 }
 
-autofactura-filters .ticket-filter-sidebar.is-open {
+autofactura-filters .ticket-filter-sidebar.offcanvas.is-open {
     visibility: visible;
     transform: none;
 }
 
-autofactura-filters .ticket-filter-sidebar > .offcanvas-header {
+autofactura-filters .ticket-filter-sidebar.offcanvas > .offcanvas-header {
     display: flex;
     align-items: center;
     flex: 0 0 auto;
 }
 
-autofactura-filters .ticket-filter-sidebar > .offcanvas-header .btn-close {
+autofactura-filters .ticket-filter-sidebar.offcanvas > .offcanvas-header .btn-close {
     margin-inline-start: auto;
 }
 
-autofactura-filters .ticket-filter-sidebar .portal-filter-outlet,
-autofactura-filters .ticket-filter-sidebar .portal-filter-form {
+autofactura-filters .ticket-filter-sidebar.offcanvas .portal-filter-outlet,
+autofactura-filters .ticket-filter-sidebar.offcanvas .portal-filter-form {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
@@ -46,7 +46,7 @@ autofactura-filters .ticket-filter-sidebar .portal-filter-form {
     padding: 0;
 }
 
-autofactura-filters .ticket-filter-sidebar .offcanvas-body {
+autofactura-filters .ticket-filter-sidebar.offcanvas .offcanvas-body {
     min-height: 0;
     overflow-y: auto;
     flex: 1 1 auto;
