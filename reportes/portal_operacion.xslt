@@ -4,7 +4,7 @@
     xmlns:session="http://panax.io/session"
     xmlns:meta="http://panax.io/metadata"
     exclude-result-prefixes="session meta">
-    <xsl:import href="portal_ventas_historica.xslt"/>
+    <xsl:import href="/reportes/portal_ventas_historica.xslt?v=20261125_5"/>
     <xsl:param name="session:user_login"/>
     <xsl:variable name="authorized" select="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'"/>
 

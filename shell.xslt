@@ -8,6 +8,12 @@ xmlns:xlink="http://www.w3.org/1999/xlink"
 >
 	<xsl:include href="widgets/shell/shell.xslt?v=6073228"/>
 
+	<xsl:template match="/">
+		<script src="/widgets/shell/sidebar-availability.js"/>
+		<script src="/widgets/shell/shell.js?v=261113"/>
+		<xsl:apply-templates mode="shell:widget"/>
+	</xsl:template>
+
 	<xsl:attribute-set name="shell:logo">
 		<xsl:attribute name="src">assets/logotype.png</xsl:attribute>
 	</xsl:attribute-set>

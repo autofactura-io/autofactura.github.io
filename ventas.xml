@@ -1,2 +1,2 @@
-<?xml-stylesheet type="text/xsl" href="reportes/portal_operacion.xslt?v=20261125_4" target="@#shell main"?>
+<?xml-stylesheet type="text/xsl" href="reportes/portal_operacion.xslt?v=20261125_5" target="@#shell main"?>
 <reporte xmlns:state="http://panax.io/state" state:showFilters="true" modulo="ventas"><filtros tenant="" sucursal="" desde="" hasta="" agrupacion="dia" informe="diario" borrados="ocultar"/></reporte>
