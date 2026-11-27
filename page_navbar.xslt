@@ -91,7 +91,7 @@ exclude-result-prefixes="session"
 					<xsl:when test="reporte/filtros">
 						<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
 							<div class="portal-filter-section"
-								xo-store="active" xo-stylesheet="/reportes/portal_operacion_nav.xslt?v=20261126_7"/>
+								xo-store="active" xo-stylesheet="/reportes/portal_reportes_nav.xslt"/>
 						</xsl:if>
 					</xsl:when>
 					<xsl:otherwise>

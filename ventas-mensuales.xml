@@ -1,0 +1,61 @@
+<?xml-stylesheet type="text/xsl" href="/reportes/portal_operacion_reportes.xslt?v=20261127_6" target="@#shell main"?>
+<reporte modulo="ventas">
+    <filtros tenant="" sucursal="" desde="" hasta="" agrupacion="dia" informe="diario" borrados="ocultar"/>
+    <periodos>
+        <mes id="2025-12" titulo="DICIEMBRE 2025" desde="2025-12-01" hasta="2025-12-31"/>
+        <mes id="2026-01" titulo="ENERO 2026" desde="2026-01-01" hasta="2026-01-31"/>
+        <mes id="2026-02" titulo="FEBRERO 2026" desde="2026-02-01" hasta="2026-02-28"/>
+        <mes id="2026-03" titulo="MARZO 2026" desde="2026-03-01" hasta="2026-03-31"/>
+        <mes id="2026-04" titulo="ABRIL 2026" desde="2026-04-01" hasta="2026-04-30"/>
+        <mes id="2026-05" titulo="MAYO 2026" desde="2026-05-01" hasta="2026-05-31"/>
+        <mes id="2026-06" titulo="JUNIO 2026" desde="2026-06-01" hasta="2026-06-30"/>
+        <mes id="2026-07" titulo="JULIO 2026" desde="2026-07-01" hasta="2026-07-31"/>
+        <mes id="2026-08" titulo="AGOSTO 2026" desde="2026-08-01" hasta="2026-08-31"/>
+        <mes id="2026-09" titulo="SEPTIEMBRE 2026" desde="2026-09-01" hasta="2026-09-30"/>
+        <mes id="2026-10" titulo="OCTUBRE 2026" desde="2026-10-01" hasta="2026-10-31"/>
+        <mes id="2026-11" titulo="NOVIEMBRE 2026" desde="2026-11-01" hasta="2026-11-30"/>
+    </periodos>
+    <formatos>
+        <formato id="diario" titulo="Ventas diarias">
+            <columna campo="efectivoPrevio" titulo="EFECTIVO TOTAL"/>
+            <columna campo="efectivo" titulo="EFE. DESP. RASURA"/>
+            <columna campo="tarjeta" titulo="TARJETA TOTAL"/>
+            <columna campo="cxc" titulo="CXC"/>
+            <columna campo="vales" titulo="VALES"/>
+            <columna campo="propina" titulo="PROPINA"/>
+            <columna campo="recibido" titulo="RECIBIDO TOTAL"/>
+            <columna campo="importe" titulo="IMPORTE"/>
+            <columna campo="iva" titulo="IVA"/>
+            <columna campo="total" titulo="TOTAL"/>
+            <columna campo="egresos" titulo="EGRESOS"/>
+            <columna campo="porDepositar" titulo="IMPORTE A DEPOSITAR"/>
+            <columna campo="depositoFecha" titulo="FECHA DE DEPÓSITO"/>
+            <columna campo="depositado" titulo="IMPORTE DEPOSITADO"/>
+            <columna campo="propinaEstimada" titulo="PROPINAS T"/>
+            <columna campo="diferencia" titulo="DIFERENCIA A GUARDAR"/>
+            <columna campo="egresosEfectivo" titulo="EGRESOS EN EFECTIVO"/>
+        </formato>
+        <formato id="conciliacion" titulo="Rasurado">
+            <columna campo="ventaPreviaConPropina" titulo="VTA. TICK. + PROP."/>
+            <columna campo="cobrosPrevios" titulo="VTA. EFE. + TARJ."/>
+            <columna campo="ventaPrevia" titulo="VENTA / TICKET / IVA" clase="venta-previa"/>
+            <columna campo="efectivoPrevio" titulo="EFECTIVO TOTAL"/>
+            <columna campo="efectivo" titulo="EFE. DESP. RASURA" clase="efectivo-corte"/>
+            <columna campo="rasurado" titulo="RASURADO" clase="rasurado"/>
+            <columna campo="tarjeta" titulo="TARJETA TOTAL"/>
+            <columna campo="cxc" titulo="CXC"/>
+            <columna campo="vales" titulo="VALES"/>
+            <columna campo="propina" titulo="PROPINA"/>
+            <columna campo="facturacion" titulo="FACTURACIÓN SAT"/>
+            <columna campo="importe" titulo="IMPORTE"/>
+            <columna campo="iva" titulo="IVA"/>
+            <columna campo="total" titulo="TOTAL"/>
+            <columna campo="egresos" titulo="EGRESOS"/>
+            <columna campo="porDepositar" titulo="IMPORTE A DEPOSITAR"/>
+            <columna campo="depositoFecha" titulo="FECHA DE DEPÓSITO"/>
+            <columna campo="depositado" titulo="IMPORTE DEPOSITADO"/>
+            <columna campo="propinaEstimada" titulo="PROPINAS T"/>
+            <columna campo="diferencia" titulo="DIFERENCIA A GUARDAR"/>
+        </formato>
+    </formatos>
+</reporte>

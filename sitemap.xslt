@@ -10,11 +10,13 @@ exclude-result-prefixes="#default session sitemap shell state"
 >
 	<xsl:import href="~/widgets/sitemap.xslt"/>
 	<xsl:param name="session:user_login"/>
+	<xsl:param name="session:autofactura_access"/>
+	<xsl:variable name="historical-sales-only" select="$session:autofactura_access='historica_ventas'"/>
 	<xsl:key name="sitemap-item" match="item" use="'#any'"/>
 	<xsl:key name="sitemap-menu-item" match="item[item]" use="@xo:id"/>
 
 	<xsl:template match="item[@modulo='facturacion']" mode="sitemap:widget" priority="10">
-		<xsl:if test="normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
+		<xsl:if test="not($historical-sales-only) and normalize-space($session:user_login) != '' and translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz') != 'mayorga'">
 			<li class="sidebar-item menu">
 				<details>
 					<summary class="sidebar-link"><xsl:value-of select="@title"/></summary>
@@ -26,7 +28,7 @@ exclude-result-prefixes="#default session sitemap shell state"
 
 	<xsl:template match="item[@target and not(item)]" mode="sitemap:widget" priority="10">
 		<xsl:variable name="isMayorga" select="translate(normalize-space($session:user_login),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz')='mayorga'"/>
-		<xsl:if test="$isMayorga = (@target='#resumen_descarga_cfdi')">
+		<xsl:if test="($historical-sales-only and @target='#ventas') or (not($historical-sales-only) and $isMayorga = (@target='#resumen_descarga_cfdi'))">
 			<li class="sidebar-item">
 				<a class="sidebar-link">
 					<xsl:apply-templates select="." mode="sitemap:target-href"/>
