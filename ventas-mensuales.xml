@@ -1,4 +1,4 @@
-<?xml-stylesheet type="text/xsl" href="/reportes/portal_operacion_reportes.xslt?v=20261127_6" target="@#shell main"?>
+<?xml-stylesheet type="text/xsl" href="/reportes/portal_operacion_reportes.xslt?v=20261127_9" target="@#shell main"?>
 <reporte modulo="ventas">
     <filtros tenant="" sucursal="" desde="" hasta="" agrupacion="dia" informe="diario" borrados="ocultar"/>
     <periodos>

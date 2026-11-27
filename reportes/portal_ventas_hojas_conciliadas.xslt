@@ -87,7 +87,7 @@
                         <thead><tr><th scope="col">DÍA</th>
                             <xsl:for-each select="$formato/columna">
                                 <th scope="col" class="text-end">
-                                    <xsl:if test="@campo='facturacion'"><xsl:attribute name="title">Estimación del reporte: venta previa menos diferencia de efectivo</xsl:attribute></xsl:if>
+                                    <xsl:if test="@campo='facturacion'"><xsl:attribute name="title">Venta previa menos el importe rasurado</xsl:attribute></xsl:if>
                                     <xsl:value-of select="@titulo"/>
                                 </th>
                             </xsl:for-each>
@@ -125,7 +125,10 @@
                     </table>
                 </div>
                 <p class="small text-muted mt-2 mb-2">El guion indica que falta un dato. Importe e IVA provienen del corte de Soft Restaurant.
-                    <xsl:if test="@informe='conciliacion'"> <xsl:if test="@rasuradoVersion"> En Rasurado, * indica un importe tomado del Excel total o parcialmente. Solo los días con cambios identificados abren el detalle.</xsl:if> Facturación SAT es el cálculo del Excel por día y su suma en el periodo.</xsl:if>
+                    <xsl:if test="@informe='conciliacion'">
+                        <xsl:if test="dia[@previosFuente='reconstruido']"> Las cifras previas reconstruidas usan el corte y el rasurado registrado.</xsl:if>
+                        <xsl:if test="@rasuradoVersion"> En Rasurado, * indica un importe diario registrado total o parcialmente sin detalle. Solo los días con cambios identificados abren el detalle.</xsl:if>
+                    </xsl:if>
                 </p>
             </xsl:if>
             <xsl:if test="corte">
@@ -248,6 +251,9 @@
                     <xsl:when test="$campo='rasurado' and not($datos/../@rasuradoVersion)">
                         <xsl:value-of select="$datos/@diferencia"/>
                     </xsl:when>
+                    <xsl:when test="$campo='facturacion' and $datos/@facturacion">
+                        <xsl:value-of select="$datos/@facturacion"/>
+                    </xsl:when>
                     <xsl:when test="$campo='facturacion'">
                         <xsl:if test="$facturable and $datos/@ventaPrevia and $datos/@diferencia">
                             <xsl:value-of select="$datos/@ventaPrevia - $datos/@diferencia"/>
@@ -263,6 +269,7 @@
                     <xsl:with-param name="clase" select="@clase"/>
                     <xsl:with-param name="fuente" select="$datos/@rasuradoFuente[$campo='rasurado']"/>
                     <xsl:with-param name="reportado" select="$datos/@rasuradoExcel[$campo='rasurado']"/>
+                    <xsl:with-param name="desglosado" select="$datos/@rasuradoDesglosado[$campo='rasurado' and $datos/@estadoRasurado='diferencia']"/>
                 </xsl:call-template></xsl:otherwise>
             </xsl:choose>
         </xsl:for-each>
@@ -340,6 +347,7 @@
         <xsl:param name="clase"/>
         <xsl:param name="fuente"/>
         <xsl:param name="reportado"/>
+        <xsl:param name="desglosado"/>
         <td class="text-end text-nowrap {$clase}">
             <xsl:if test="$fuente">
                 <xsl:attribute name="title">
@@ -348,6 +356,10 @@
                         <xsl:when test="$fuente='mixto'">Rasurado de Excel y respaldos de distintas sucursales</xsl:when>
                         <xsl:otherwise>Rasurado por comparación de respaldos</xsl:otherwise>
                     </xsl:choose>
+                    <xsl:if test="$desglosado">
+                        <xsl:text>. Importe identificado por ticket </xsl:text>
+                        <xsl:value-of select="format-number($desglosado, '$#,##0.00;-$#,##0.00')"/>
+                    </xsl:if>
                     <xsl:if test="$fuente='respaldos' and $reportado and number($reportado) != number($valor)">
                         <xsl:text>. Importe en Excel </xsl:text>
                         <xsl:value-of select="format-number($reportado, '$#,##0.00;-$#,##0.00')"/>
