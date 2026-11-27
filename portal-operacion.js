@@ -1,5 +1,44 @@
 (() => {
     const pageSize = 50;
+
+    const historicalSalesAccess = 'historica_ventas';
+    const historicalSalesRoute = '#ventas';
+
+    function isHistoricalSalesOnly() {
+        return xo.session.autofactura_access === historicalSalesAccess
+            && xo.session.autofactura_access_user === xo.session.user_login;
+    }
+
+    function openHistoricalSales() {
+        if (!isHistoricalSalesOnly()) return;
+        const view = location.hash.split('?')[0];
+        if (![historicalSalesRoute, '#login', '#logout'].includes(view)) {
+            location.replace(historicalSalesRoute);
+        }
+    }
+
+    function clearHistoricalSalesProfile() {
+        delete xo.session.autofactura_access;
+        delete xo.session.autofactura_access_user;
+    }
+
+    window.addEventListener('login', ({ detail }) => {
+        const response = detail?.response;
+        if (!response?.ok || !response.url) return;
+        const endpoint = new URL(response.url);
+        if (endpoint.origin !== 'https://server.autofactura.io' || endpoint.pathname !== '/login.asp') return;
+        const user = detail.return_value?.user_login;
+        if (!user || user !== xo.session.user_login || detail.return_value.autofactura_access !== historicalSalesAccess) {
+            clearHistoricalSalesProfile();
+            return;
+        }
+        xo.session.autofactura_access = historicalSalesAccess;
+        xo.session.autofactura_access_user = user;
+        window.setTimeout(openHistoricalSales, 0);
+    });
+
+    window.addEventListener('logout', clearHistoricalSalesProfile);
+    window.addEventListener('hashchange', openHistoricalSales);
     const metadata = 'http://panax.io/metadata';
     const filterNamespace = 'http://autofactura.io/filters';
     const fields = ['tenant', 'sucursal', 'desde', 'hasta', 'estado', 'agrupacion', 'informe', 'borrados'];
@@ -41,7 +80,7 @@
         const root = model.documentElement;
         const draft = root.querySelector('filtros');
         const isVentas = root.getAttribute('modulo') === 'ventas';
-        const historicalSalesOnly = xo.session.autofactura_access === 'historica_ventas';
+        const historicalSalesOnly = isHistoricalSalesOnly();
         if (historicalSalesOnly) {
             if (!isVentas) return;
             const informe = filters.informe === 'conciliacion' ? 'conciliacion' : 'diario';
