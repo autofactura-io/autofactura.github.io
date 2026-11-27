@@ -7,16 +7,18 @@
     z-index: 1050;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     background: #fff;
     border-left: 1px solid #dee2e6;
     visibility: hidden;
     transform: translateX(100%);
-    transition: transform .3s ease-in-out, visibility .3s;
+    transition: transform .3s ease-in-out, visibility 0s .3s;
 }
 
 .ticket-filter-sidebar.is-open {
     visibility: visible;
     transform: translateX(0);
+    transition-delay: 0s;
 }
 
 .ticket-filter-backdrop {

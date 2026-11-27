@@ -4,7 +4,7 @@ if ('serviceWorker' in navigator) {
 //        window.location.reload();
     });
 
-    navigator.serviceWorker.register('./service-worker.js?v=20261127_6')//, { scope: ' /' }
+    navigator.serviceWorker.register('./service-worker.js?v=20261127_8')//, { scope: ' /' }
         .then(reg => {
             console.log('[SW] Registered', reg);
             reg.addEventListener('updatefound', () => {

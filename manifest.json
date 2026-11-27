@@ -44,7 +44,7 @@
 		"#factura_cliente": "factura_cliente.xml?v=20261126_7",
 		"#consulta_facturas": "consulta_facturas.xml?v=20261126_7",
 		"#ventas": "ventas-mensuales.xml?v=20261127_6",
-		"autofactura-filters": "autofactura/components/autofactura-filters.xhtml?v=20261126_7",
+		"autofactura-filters": "autofactura/components/autofactura-filters.xhtml?v=20261127_8",
 		"#impuestos": "impuestos_scoped.html",
 		"#concentrador": "concentrador_scoped.html?v=20261126_7",
 		"#prefactura": "prefactura.xml",
